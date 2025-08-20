@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, Youtube } from 'lucide-react';
+import { Upload, Youtube, Video, Flame, UserCircle, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -78,6 +78,28 @@ export default function Home() {
           Upload
         </Button>
       </header>
+       <nav className="border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-around items-center">
+            <Button variant="ghost" className="flex-col h-auto py-2">
+              <Video className="w-6 h-6" />
+              <span className="text-xs">Video</span>
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto py-2">
+              <Flame className="w-6 h-6" />
+              <span className="text-xs">Shorts</span>
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto py-2">
+              <UserCircle className="w-6 h-6" />
+              <span className="text-xs">Channel</span>
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto py-2">
+              <PlusCircle className="w-6 h-6" />
+              <span className="text-xs">Upload</span>
+            </Button>
+          </div>
+        </div>
+      </nav>
 
       <main className="flex-grow p-6">
         <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
