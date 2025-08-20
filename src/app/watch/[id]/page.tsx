@@ -38,8 +38,31 @@ export default function WatchPage() {
         </div>
       </header>
 
-      <main className="flex-grow container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <main className="flex-grow container mx-auto p-4 md:p-6 flex flex-col gap-6">
+        <div className="w-full">
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Rewards</CardTitle>
+                    <Timer className="w-6 h-6 text-primary"/>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-center p-8 space-y-4">
+                        <p className="text-lg">Watch for 3 minutes to earn</p>
+                        <p className="text-4xl font-bold flex items-center justify-center gap-2">
+                           30 <Coins className="w-8 h-8 text-yellow-500" />
+                        </p>
+                         <div className="w-full bg-muted rounded-full h-4">
+                           <div className="bg-primary h-4 rounded-full" style={{ width: '0%' }}></div>
+                         </div>
+                        <p className="text-sm text-muted-foreground">00:00 / 03:00</p>
+                    </div>
+                    <Button className="w-full" disabled>
+                        Claim Reward
+                    </Button>
+                </CardContent>
+             </Card>
+        </div>
+        <div>
             <Card className="overflow-hidden">
                  <div className="relative aspect-video">
                     <iframe
@@ -63,29 +86,6 @@ export default function WatchPage() {
                     </p>
                 </CardContent>
             </Card>
-        </div>
-        <div className="lg:col-span-1">
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Rewards</CardTitle>
-                    <Timer className="w-6 h-6 text-primary"/>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center p-8 space-y-4">
-                        <p className="text-lg">Watch for 3 minutes to earn</p>
-                        <p className="text-4xl font-bold flex items-center justify-center gap-2">
-                           30 <Coins className="w-8 h-8 text-yellow-500" />
-                        </p>
-                         <div className="w-full bg-muted rounded-full h-4">
-                           <div className="bg-primary h-4 rounded-full" style={{ width: '0%' }}></div>
-                         </div>
-                        <p className="text-sm text-muted-foreground">00:00 / 03:00</p>
-                    </div>
-                    <Button className="w-full" disabled>
-                        Claim Reward
-                    </Button>
-                </CardContent>
-             </Card>
         </div>
       </main>
     </div>
