@@ -1,3 +1,4 @@
+
 'use client';
 
 import {Coins, Timer, CheckCircle, Youtube} from 'lucide-react';
@@ -10,7 +11,6 @@ import {useToast} from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const REWARD_DURATION_SECONDS = 180; // 3 minutes
 const REWARD_AMOUNT = 30;
 
 export default function WatchPage() {
@@ -22,24 +22,24 @@ export default function WatchPage() {
   const videoChannel = searchParams.get('channel') || 'Channel';
   const videoViews = searchParams.get('views') || '0 views';
   const videoUploaded = searchParams.get('uploaded') || '...';
+  const isShort = searchParams.get('isShort') === 'true';
 
+  const REWARD_DURATION_SECONDS = isShort ? 60 : 180;
 
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
   const {toast} = useToast();
 
-  const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched]);
-  const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched]);
+  const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
+  const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
 
   useEffect(() => {
-    // Load coins from local storage
     const savedCoins = localStorage.getItem('userCoins');
     if (savedCoins) {
       setCoins(parseInt(savedCoins, 10));
     }
 
-    // Check if reward for this video was already claimed today
     const lastClaimed = localStorage.getItem(`videoClaim_${videoId}`);
     if (lastClaimed) {
         const lastClaimDate = new Date(lastClaimed);
@@ -51,7 +51,7 @@ export default function WatchPage() {
             setTimeWatched(REWARD_DURATION_SECONDS);
         }
     }
-  }, [videoId]);
+  }, [videoId, REWARD_DURATION_SECONDS]);
 
   useEffect(() => {
     if (rewardClaimedToday || isTimerComplete) {
@@ -69,7 +69,7 @@ export default function WatchPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rewardClaimedToday, isTimerComplete]);
+  }, [rewardClaimedToday, isTimerComplete, REWARD_DURATION_SECONDS]);
 
 
   const handleClaimReward = () => {
@@ -98,6 +98,11 @@ export default function WatchPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
        <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
+           <Link href={isShort ? "/shorts" : "/"} passHref>
+             <Button variant="ghost" size="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+             </Button>
+           </Link>
           <h1 className="text-xl font-bold">Watch & Earn</h1>
         </div>
         <div className="flex items-center gap-4">
@@ -117,7 +122,7 @@ export default function WatchPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-center p-8 space-y-4">
-                        <p className="text-lg">Watch for {REWARD_DURATION_SECONDS / 60} minutes to earn</p>
+                        <p className="text-lg">Watch for {REWARD_DURATION_SECONDS / 60} minute{REWARD_DURATION_SECONDS / 60 > 1 ? 's' : ''} to earn</p>
                         <p className="text-4xl font-bold flex items-center justify-center gap-2">
                            {REWARD_AMOUNT} <Coins className="w-8 h-8 text-yellow-500" />
                         </p>
@@ -159,7 +164,7 @@ export default function WatchPage() {
                           <Youtube className="w-12 h-12 text-red-500" />
                         </a>
                         <div>
-                            <a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{videoChannel}</a>
+                            <a href={`https://www.youtube.com/channel/${videoChannel.replace('@','')}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{videoChannel}</a>
                             <p className="text-sm text-muted-foreground">
                               {videoViews} &bull; {videoUploaded}
                             </p>

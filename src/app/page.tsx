@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -116,27 +117,30 @@ export default function Home() {
         </div>
       </main>
 
-       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-sm">
+       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black">
         <div className="container mx-auto px-4">
-          <div className="flex justify-around items-center">
+          <div className="flex justify-around items-center h-14">
             <Link href="/">
-              <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-zinc-800">
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
             </Link>
             <Link href="/shorts">
-              <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
                 <Flame className="w-6 h-6" />
                 <span className="text-xs">Shorts</span>
               </Button>
             </Link>
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+             <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+                <PlusCircle className="w-8 h-8" />
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
               <UserCircle className="w-6 h-6" />
               <span className="text-xs">Channel</span>
             </Button>
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-              <PlusCircle className="w-6 h-6" />
+            <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+              <Upload className="w-6 h-6" />
               <span className="text-xs">Upload</span>
             </Button>
           </div>
