@@ -12,6 +12,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const REWARD_AMOUNT = 30;
+const DAILY_COIN_LIMIT = 650;
 
 // YouTube Player states
 const YT_PLAYER_STATE = {
@@ -39,7 +40,8 @@ export default function WatchPage() {
 
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
-  const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
+  const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
+  const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
   const [isTimerPaused, setIsTimerPaused] = useState(true); // Start as paused
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
@@ -47,6 +49,7 @@ export default function WatchPage() {
 
   const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
+  const hasReachedDailyLimit = useMemo(() => dailyCoinsEarned >= DAILY_COIN_LIMIT, [dailyCoinsEarned]);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -54,6 +57,23 @@ export default function WatchPage() {
     if (savedCoins) {
       setCoins(parseInt(savedCoins, 10));
     }
+    
+    // Check daily earnings
+    const dailyData = localStorage.getItem('dailyCoinData');
+    if (dailyData) {
+        const { date, amount } = JSON.parse(dailyData);
+        const today = new Date().toISOString().split('T')[0];
+        if (date === today) {
+            setDailyCoinsEarned(amount);
+        } else {
+            // Reset for the new day
+            localStorage.setItem('dailyCoinData', JSON.stringify({ date: today, amount: 0 }));
+        }
+    } else {
+        const today = new Date().toISOString().split('T')[0];
+        localStorage.setItem('dailyCoinData', JSON.stringify({ date: today, amount: 0 }));
+    }
+
 
     const lastClaimed = localStorage.getItem(`videoClaim_${videoId}`);
     if (lastClaimed) {
@@ -62,7 +82,7 @@ export default function WatchPage() {
         if (lastClaimDate.getFullYear() === today.getFullYear() &&
             lastClaimDate.getMonth() === today.getMonth() &&
             lastClaimDate.getDate() === today.getDate()) {
-            setRewardClaimedToday(true);
+            setRewardClaimedForVideo(true);
             setTimeWatched(REWARD_DURATION_SECONDS);
         }
     }
@@ -116,7 +136,7 @@ export default function WatchPage() {
 
   // Main timer interval
   useEffect(() => {
-    if (rewardClaimedToday || isTimerComplete || isTimerPaused) {
+    if (rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
       return;
     }
 
@@ -131,7 +151,7 @@ export default function WatchPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rewardClaimedToday, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS]);
+  }, [rewardClaimedForVideo, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS, hasReachedDailyLimit]);
 
   // Handle browser tab visibility
   useEffect(() => {
@@ -170,13 +190,26 @@ export default function WatchPage() {
 
 
   const handleClaimReward = () => {
+    if (hasReachedDailyLimit) {
+        toast({
+            variant: "destructive",
+            title: "Daily Limit Reached",
+            description: `You can only earn ${DAILY_COIN_LIMIT} coins per day.`,
+        });
+        return;
+    }
+      
     const newTotalCoins = coins + REWARD_AMOUNT;
     setCoins(newTotalCoins);
     localStorage.setItem('userCoins', newTotalCoins.toString());
     
-    const today = new Date().toISOString();
-    localStorage.setItem(`videoClaim_${videoId}`, today);
-    setRewardClaimedToday(true);
+    const today = new Date();
+    localStorage.setItem(`videoClaim_${videoId}`, today.toISOString());
+    setRewardClaimedForVideo(true);
+
+    const newDailyAmount = dailyCoinsEarned + REWARD_AMOUNT;
+    setDailyCoinsEarned(newDailyAmount);
+    localStorage.setItem('dailyCoinData', JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
 
     toast({
         title: "Reward Claimed!",
@@ -184,6 +217,14 @@ export default function WatchPage() {
         action: <CheckCircle className="text-green-500" />
     });
   };
+
+  const getButtonText = () => {
+    if (rewardClaimedForVideo) return "Reward Claimed";
+    if (hasReachedDailyLimit) return "Daily Limit Reached";
+    if (isTimerComplete) return "Claim Reward";
+    if (isTimerPaused) return "Timer Paused";
+    return "Watch to Unlock";
+  }
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -227,13 +268,16 @@ export default function WatchPage() {
                         <p className="text-sm text-muted-foreground">
                             {formatTime(timeWatched)} / {formatTime(REWARD_DURATION_SECONDS)}
                         </p>
+                        <p className="text-sm text-muted-foreground">
+                            Daily Coins: {dailyCoinsEarned} / {DAILY_COIN_LIMIT}
+                        </p>
                     </div>
                     <Button 
                         className="w-full" 
-                        disabled={!isTimerComplete || rewardClaimedToday}
+                        disabled={!isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
                         onClick={handleClaimReward}
                     >
-                        {rewardClaimedToday ? "Reward Claimed Today" : (isTimerComplete ? "Claim Reward" : (isTimerPaused ? "Timer Paused" : "Watch to Unlock"))}
+                        {getButtonText()}
                     </Button>
                 </CardContent>
              </Card>
