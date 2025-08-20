@@ -2,75 +2,67 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Flame, UserCircle, Video, PlusCircle, Youtube, ThumbsUp, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Upload, Youtube, Video, Flame, UserCircle, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function ShortsPage() {
-    const router = useRouter();
     const shorts = [
         { id: 'oV8exPIMdSY', title: 'YouTube Short 1', channel: '@ShortsCreator1' },
         { id: 'QuAxFi9V7kg', title: 'YouTube Short 2', channel: '@ShortsCreator2' },
         { id: 'dVUy6aWYgHI', title: 'YouTube Short 3', channel: '@ShortsCreator3' },
         { id: 'DAcFJ-MmvhQ', title: 'YouTube Short 4', channel: '@ShortsCreator4' },
-    ].map(s => ({...s, thumbnail: `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`}));
-
-    const handleShortClick = (shortId: string, title: string, channel: string) => {
-        const url = `/watch/${shortId}?title=${encodeURIComponent(title)}&channel=${encodeURIComponent(channel)}&isShort=true`;
-        router.push(url);
-    };
+    ].map(s => ({...s, thumbnail: `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`, views: '10K views', uploaded: '1 day ago'}));
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white">
-      <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-2 bg-black">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Youtube className="w-8 h-8 text-red-500" />
-          <h1 className="text-xl font-bold font-headline">Shorts</h1>
+          <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal className="w-6 h-6" />
-        </Button>
       </header>
       
-      <main className="flex-grow snap-y snap-mandatory overflow-y-scroll scrollbar-hide pb-14">
-        {shorts.map((short, index) => (
-          <div key={index} className="relative w-full h-full snap-start flex-shrink-0">
-            <iframe
-              src={`https://www.youtube.com/embed/${short.id}?autoplay=1&mute=1&loop=1&playlist=${short.id}&controls=0&showinfo=0&autohide=1&modestbranding=1`}
-              frameBorder="0"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              className="absolute top-0 left-0 w-full h-full object-cover"
-            ></iframe>
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
-              <div className="flex items-end">
-                <div className="flex-grow">
-                  <h3 className="text-base font-semibold">{short.title}</h3>
-                  <p className="text-sm text-gray-300">{short.channel}</p>
-                </div>
-                <div className="flex flex-col items-center gap-4">
-                  <Button variant="ghost" size="icon" className="flex-col h-auto text-white">
-                    <ThumbsUp className="w-6 h-6"/>
-                    <span className="text-xs">1.2K</span>
-                  </Button>
-                   <Button variant="ghost" size="icon" className="flex-col h-auto text-white" onClick={() => handleShortClick(short.id, short.title, short.channel)}>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-coins w-6 h-6 text-yellow-400"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.76A6 6 0 1 1 10.76 3.91"/><path d="m16 6 3 3-6 6-3-3 6-6"/></svg>
-                    <span className="text-xs">Earn</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" className="flex-col h-auto text-white">
-                    <MessageCircle className="w-6 h-6"/>
-                    <span className="text-xs">10</span>
-                  </Button>
-                  <Button variant="ghost" size="icon" className="flex-col h-auto text-white">
-                    <Share2 className="w-6 h-6"/>
-                    <span className="text-xs">Share</span>
-                  </Button>
+      <main className="flex-grow p-6 pb-24">
+        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {shorts.map((short) => (
+            <Link 
+              href={`/watch/${short.id}?title=${encodeURIComponent(short.title)}&channel=${encodeURIComponent(short.channel)}&views=${encodeURIComponent(short.views)}&uploaded=${encodeURIComponent(short.uploaded)}&isShort=true`}
+              key={short.id} 
+              className="group"
+            >
+              <div>
+                <Card className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="relative aspect-video">
+                      <Image
+                        src={short.thumbnail}
+                        alt={short.title}
+                        layout="fill"
+                        objectFit="cover"
+                        className="transition-transform duration-300 group-hover:scale-105"
+                        data-ai-hint="youtube short thumbnail"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                <div className="flex gap-4 pt-3">
+                  <div className="flex-shrink-0">
+                     <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-base font-semibold leading-tight">{short.title}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{short.channel}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {short.views} &bull; {short.uploaded}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
+            </Link>
+          ))}
+        </div>
       </main>
 
        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black">

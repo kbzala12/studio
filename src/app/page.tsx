@@ -127,7 +127,7 @@ export default function Home() {
               </Button>
             </Link>
             <Link href="/shorts">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-red-500 hover:bg-red-600">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-zinc-800 hover:bg-zinc-700">
                 <Flame className="w-6 h-6" />
                 <span className="text-xs">Shorts</span>
               </Button>
