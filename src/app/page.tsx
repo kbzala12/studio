@@ -81,10 +81,12 @@ export default function Home() {
        <nav className="border-b">
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center">
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-              <Video className="w-6 h-6" />
-              <span className="text-xs">Video</span>
-            </Button>
+            <Link href="/">
+              <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+                <Video className="w-6 h-6" />
+                <span className="text-xs">Video</span>
+              </Button>
+            </Link>
             <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
               <Flame className="w-6 h-6" />
               <span className="text-xs">Shorts</span>
