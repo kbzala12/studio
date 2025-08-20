@@ -1,6 +1,6 @@
 'use client';
 
-import {Coins, Home, Timer, CheckCircle} from 'lucide-react';
+import {Coins, Home, Timer, CheckCircle, Youtube} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo} from 'react';
 import {Button} from '@/components/ui/button';
@@ -160,9 +160,11 @@ export default function WatchPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-3">
-                        <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                        <a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer">
+                          <Youtube className="w-12 h-12 text-red-500" />
+                        </a>
                         <div>
-                            <p className="font-semibold">{videoChannel}</p>
+                            <a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{videoChannel}</a>
                             <p className="text-sm text-muted-foreground">
                               {videoViews} &bull; {videoUploaded}
                             </p>
