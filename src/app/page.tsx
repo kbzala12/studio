@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, Youtube, Video, Flame, UserCircle, PlusCircle } from 'lucide-react';
+import { Upload, Youtube, Video, Flame, UserCircle, PlusCircle, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -156,8 +156,8 @@ export default function Home() {
               <span className="text-xs">Channel</span>
             </Button>
             <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
-              <Upload className="w-6 h-6" />
-              <span className="text-xs">Upload</span>
+              <UserPlus className="w-6 h-6" />
+              <span className="text-xs">Invite</span>
             </Button>
           </div>
         </div>
