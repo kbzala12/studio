@@ -3,7 +3,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, Youtube, Video, Flame, UserCircle, PlusCircle, UserPlus } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Flame, Video, PlusCircle, UserCircle, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -51,7 +52,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <Youtube className="w-8 h-8 text-red-500" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
       </header>
@@ -77,9 +78,8 @@ export default function Home() {
                         <Image
                           src={short.thumbnail}
                           alt={short.title}
-                          layout="fill"
-                          objectFit="cover"
-                          className="transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                           data-ai-hint="youtube short thumbnail"
                         />
                       </div>
@@ -112,9 +112,8 @@ export default function Home() {
                         <Image
                           src={video.thumbnail}
                           alt={video.title}
-                          layout="fill"
-                          objectFit="cover"
-                          className="transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                           data-ai-hint="video thumbnail"
                         />
                       </div>
@@ -143,7 +142,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center h-14">
             <Link href="/">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600" data-active={true}>
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-green-500 hover:bg-green-600" data-active={true}>
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
@@ -155,15 +154,33 @@ export default function Home() {
               <UserCircle className="w-6 h-6" />
               <span className="text-xs">Channel</span>
             </Button>
-            <Link href="https://t.me/Bingyt_bot" target="_blank">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
-                <UserPlus className="w-6 h-6" />
-                <span className="text-xs">Invite</span>
+                  <UserPlus className="w-6 h-6" />
+                  <span className="text-xs">Invite</span>
                 </Button>
-            </Link>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Open Telegram?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will open the link to our Telegram bot. Do you want to continue?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => window.open('https://t.me/Bingyt_bot', '_blank')}>
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </nav>
     </div>
   );
 }
+
+    
