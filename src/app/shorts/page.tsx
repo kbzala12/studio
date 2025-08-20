@@ -76,25 +76,25 @@ export default function ShortsPage() {
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center h-14">
             <Link href="/">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-zinc-800 hover:bg-zinc-700">
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
             </Link>
             <Link href="/shorts">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-zinc-800">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-green-500 hover:bg-green-600">
                 <Flame className="w-6 h-6" />
                 <span className="text-xs">Shorts</span>
               </Button>
             </Link>
-             <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+             <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                 <PlusCircle className="w-8 h-8" />
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+            <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
               <UserCircle className="w-6 h-6" />
               <span className="text-xs">Channel</span>
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 text-white hover:bg-zinc-800 hover:text-white">
+            <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
               <Upload className="w-6 h-6" />
               <span className="text-xs">Upload</span>
             </Button>
