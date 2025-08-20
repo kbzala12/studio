@@ -6,14 +6,72 @@ import { Upload, Youtube } from 'lucide-react';
 import Image from 'next/image';
 
 export default function Home() {
-  const videos = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    title: `Sample Video Title ${i + 1}`,
-    thumbnail: `https://placehold.co/600x400.png`,
-    channel: `Channel ${i + 1}`,
-    views: `${Math.floor(Math.random() * 100)}K views`,
-    uploaded: `${Math.floor(Math.random() * 12) + 1} months ago`,
-  }));
+  const videos = [
+    {
+      id: 1,
+      title: 'YouTube Video 1',
+      thumbnail: 'https://i.ytimg.com/vi/JkzAlNEuiyk/hqdefault.jpg',
+      channel: 'Channel 1',
+      views: '1.2K views',
+      uploaded: '1 day ago',
+    },
+    {
+      id: 2,
+      title: 'YouTube Video 2',
+      thumbnail: 'https://i.ytimg.com/vi/eteCs5_FAgU/hqdefault.jpg',
+      channel: 'Channel 2',
+      views: '2.3K views',
+      uploaded: '2 days ago',
+    },
+    {
+      id: 3,
+      title: 'YouTube Video 3',
+      thumbnail: 'https://i.ytimg.com/vi/1-2981cjwhM/hqdefault.jpg',
+      channel: 'Channel 3',
+      views: '3.4K views',
+      uploaded: '3 days ago',
+    },
+    {
+      id: 4,
+      title: 'YouTube Video 4',
+      thumbnail: 'https://i.ytimg.com/vi/oLOST3vWR4g/hqdefault.jpg',
+      channel: 'Channel 4',
+      views: '4.5K views',
+      uploaded: '4 days ago',
+    },
+    {
+      id: 5,
+      title: 'YouTube Video 5',
+      thumbnail: 'https://i.ytimg.com/vi/C8LqsLxF7mQ/hqdefault.jpg',
+      channel: 'Channel 5',
+      views: '5.6K views',
+      uploaded: '5 days ago',
+    },
+    {
+      id: 6,
+      title: 'YouTube Video 6',
+      thumbnail: 'https://i.ytimg.com/vi/G2YCGapVbEc/hqdefault.jpg',
+      channel: 'Channel 6',
+      views: '6.7K views',
+      uploaded: '6 days ago',
+    },
+     {
+      id: 7,
+      title: 'YouTube Video 7',
+      thumbnail: 'https://i.ytimg.com/vi/JkzAlNEuiyk/hqdefault.jpg',
+      channel: 'Channel 7',
+      views: '7.8K views',
+      uploaded: '7 days ago',
+    },
+    {
+      id: 8,
+      title: 'YouTube Video 8',
+      thumbnail: 'https://i.ytimg.com/vi/1-2981cjwhM/hqdefault.jpg',
+      channel: 'Channel 8',
+      views: '8.9K views',
+      uploaded: '8 days ago',
+    }
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
