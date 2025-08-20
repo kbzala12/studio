@@ -1,20 +1,29 @@
 'use client';
 
 import {Coins, Home, Timer, CheckCircle} from 'lucide-react';
-import {useParams} from 'next/navigation';
+import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {Progress} from '@/components/ui/progress';
 import {useToast} from '@/hooks/use-toast';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const REWARD_DURATION_SECONDS = 180; // 3 minutes
 const REWARD_AMOUNT = 30;
 
 export default function WatchPage() {
   const {id} = useParams();
+  const searchParams = useSearchParams();
   const videoId = Array.isArray(id) ? id[0] : id;
+  
+  const videoTitle = searchParams.get('title') || 'Video Title';
+  const videoChannel = searchParams.get('channel') || 'Channel';
+  const videoViews = searchParams.get('views') || '0 views';
+  const videoUploaded = searchParams.get('uploaded') || '...';
+
+
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
@@ -147,10 +156,18 @@ export default function WatchPage() {
             </Card>
             <Card className="mt-4">
                 <CardHeader>
-                    <CardTitle>Video Title Placeholder</CardTitle>
+                    <CardTitle>{videoTitle}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">Channel &bull; Views &bull; Uploaded</p>
+                    <div className="flex items-center gap-3">
+                        <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                        <div>
+                            <p className="font-semibold">{videoChannel}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {videoViews} &bull; {videoUploaded}
+                            </p>
+                        </div>
+                    </div>
                     <p className="mt-4">
                         Video description will go here. You can add more details about the video.
                     </p>

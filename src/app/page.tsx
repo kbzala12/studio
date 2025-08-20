@@ -82,7 +82,11 @@ export default function Home() {
       <main className="flex-grow p-6">
         <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {videos.map((video) => (
-            <Link href={`/watch/${video.id}`} key={video.id} className="group">
+            <Link 
+              href={`/watch/${video.id}?title=${encodeURIComponent(video.title)}&channel=${encodeURIComponent(video.channel)}&views=${encodeURIComponent(video.views)}&uploaded=${encodeURIComponent(video.uploaded)}`}
+              key={video.id} 
+              className="group"
+            >
               <div>
                 <Card className="overflow-hidden">
                   <CardContent className="p-0">
