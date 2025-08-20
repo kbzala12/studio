@@ -3,7 +3,7 @@
 
 import {Coins, Timer, CheckCircle, Youtube} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
-import {useEffect, useState, useMemo} from 'react';
+import {useEffect, useState, useMemo, useRef} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {Progress} from '@/components/ui/progress';
@@ -29,7 +29,9 @@ export default function WatchPage() {
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
-  const {toast} = useToast();
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const {toast, dismiss} = useToast();
+  const toastId = useRef<string | null>(null);
 
   const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
@@ -51,10 +53,10 @@ export default function WatchPage() {
             setTimeWatched(REWARD_DURATION_SECONDS);
         }
     }
-  }, [videoId, REWARD_DURATION_SECONDS]);
+  }, [videoId]);
 
   useEffect(() => {
-    if (rewardClaimedToday || isTimerComplete) {
+    if (rewardClaimedToday || isTimerComplete || isTimerPaused) {
       return;
     }
 
@@ -69,7 +71,36 @@ export default function WatchPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rewardClaimedToday, isTimerComplete, REWARD_DURATION_SECONDS]);
+  }, [rewardClaimedToday, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsTimerPaused(true);
+        const { id } = toast({
+          title: "Timer Paused",
+          description: "Return to this tab to continue earning.",
+          duration: Infinity,
+        });
+        toastId.current = id;
+      } else {
+        setIsTimerPaused(false);
+        if (toastId.current) {
+            dismiss(toastId.current);
+            toastId.current = null;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (toastId.current) {
+        dismiss(toastId.current);
+      }
+    };
+  }, [toast, dismiss]);
 
 
   const handleClaimReward = () => {
@@ -136,7 +167,7 @@ export default function WatchPage() {
                         disabled={!isTimerComplete || rewardClaimedToday}
                         onClick={handleClaimReward}
                     >
-                        {rewardClaimedToday ? "Reward Claimed Today" : (isTimerComplete ? "Claim Reward" : "Watch to Unlock")}
+                        {rewardClaimedToday ? "Reward Claimed Today" : (isTimerComplete ? "Claim Reward" : (isTimerPaused ? "Timer Paused" : "Watch to Unlock"))}
                     </Button>
                 </CardContent>
              </Card>
@@ -180,4 +211,3 @@ export default function WatchPage() {
     </div>
   );
 }
-
