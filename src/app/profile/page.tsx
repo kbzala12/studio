@@ -109,7 +109,8 @@ export default function ProfilePage() {
   const handleClaimDailyBonus = () => {
     if (!currentUser || hasClaimedDailyBonus) return;
 
-    const newCoins = coins + DAILY_BONUS_AMOUNT;
+    const currentCoins = coins;
+    const newCoins = currentCoins + DAILY_BONUS_AMOUNT;
     updateUserCoins(currentUser.name, newCoins);
     
     addTransaction(currentUser.name, {
@@ -366,3 +367,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
