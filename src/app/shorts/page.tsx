@@ -33,13 +33,14 @@ export default function ShortsPage() {
         </Button>
       </header>
       
-      <main className="flex-grow snap-y snap-mandatory overflow-y-scroll scrollbar-hide">
+      <main className="flex-grow snap-y snap-mandatory overflow-y-scroll scrollbar-hide pb-14">
         {shorts.map((short, index) => (
           <div key={index} className="relative w-full h-full snap-start flex-shrink-0">
             <iframe
               src={`https://www.youtube.com/embed/${short.id}?autoplay=1&mute=1&loop=1&playlist=${short.id}&controls=0&showinfo=0&autohide=1&modestbranding=1`}
               frameBorder="0"
               allow="autoplay; encrypted-media"
+              allowFullScreen
               className="absolute top-0 left-0 w-full h-full object-cover"
             ></iframe>
             <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
