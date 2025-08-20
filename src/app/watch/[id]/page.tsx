@@ -98,7 +98,7 @@ export default function WatchPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
        <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
-          <Link href="/">
+           <Link href="/">
             <Button variant="ghost" size="icon">
                 <Home className="w-6 h-6" />
             </Button>
