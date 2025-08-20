@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, PlusCircle, UserPlus, Upload } from 'lucide-react';
+import { Flame, Video, User, Upload, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -147,9 +147,11 @@ export default function Home() {
                 <span className="text-xs">Video</span>
               </Button>
             </Link>
-             <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
-                <PlusCircle className="w-8 h-8" />
-            </Button>
+             <Link href="/profile">
+                <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
+                    <User className="w-8 h-8" />
+                </Button>
+            </Link>
             <Link href="/upload">
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
                   <Upload className="w-6 h-6" />
