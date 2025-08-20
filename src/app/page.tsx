@@ -68,42 +68,14 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Youtube className="w-8 h-8 text-red-500" />
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
-        <Button>
-          <Upload className="mr-2" />
-          Upload
-        </Button>
       </header>
-       <nav className="border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-around items-center">
-            <Link href="/">
-              <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-                <Video className="w-6 h-6" />
-                <span className="text-xs">Video</span>
-              </Button>
-            </Link>
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-              <Flame className="w-6 h-6" />
-              <span className="text-xs">Shorts</span>
-            </Button>
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-              <UserCircle className="w-6 h-6" />
-              <span className="text-xs">Channel</span>
-            </Button>
-            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
-              <PlusCircle className="w-6 h-6" />
-              <span className="text-xs">Upload</span>
-            </Button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="flex-grow p-6">
+      
+      <main className="flex-grow p-6 pb-24">
         <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {videos.map((video) => (
             <Link 
@@ -143,6 +115,31 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-around items-center">
+            <Link href="/">
+              <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+                <Video className="w-6 h-6" />
+                <span className="text-xs">Video</span>
+              </Button>
+            </Link>
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+              <Flame className="w-6 h-6" />
+              <span className="text-xs">Shorts</span>
+            </Button>
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+              <UserCircle className="w-6 h-6" />
+              <span className="text-xs">Channel</span>
+            </Button>
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
+              <PlusCircle className="w-6 h-6" />
+              <span className="text-xs">Upload</span>
+            </Button>
+          </div>
+        </div>
+      </nav>
     </div>
   );
 }
