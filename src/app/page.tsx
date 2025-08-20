@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, PlusCircle, UserCircle, UserPlus } from 'lucide-react';
+import { Flame, Video, PlusCircle, UserCircle, UserPlus, Upload } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -150,10 +150,12 @@ export default function Home() {
              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                 <PlusCircle className="w-8 h-8" />
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
-              <UserCircle className="w-6 h-6" />
-              <span className="text-xs">Channel</span>
-            </Button>
+            <Link href="/upload">
+                <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
+                  <Upload className="w-6 h-6" />
+                  <span className="text-xs">Channel</span>
+                </Button>
+            </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
@@ -182,5 +184,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
