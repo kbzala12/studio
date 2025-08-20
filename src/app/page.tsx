@@ -149,7 +149,8 @@ export default function Home() {
             </Link>
              <Link href="/profile">
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
-                    <User className="w-8 h-8" />
+                    <User className="w-6 h-6" />
+                    <span className="text-xs">Profile</span>
                 </Button>
             </Link>
             <Link href="/upload">
