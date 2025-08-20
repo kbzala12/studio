@@ -1,15 +1,27 @@
 'use client';
 
-import {Coins, Home, Timer} from 'lucide-react';
+import {Coins, Home, Timer, CheckCircle} from 'lucide-react';
 import {useParams} from 'next/navigation';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useMemo} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {Progress} from '@/components/ui/progress';
+import {useToast} from '@/hooks/use-toast';
 import Link from 'next/link';
+
+const REWARD_DURATION_SECONDS = 180; // 3 minutes
+const REWARD_AMOUNT = 30;
 
 export default function WatchPage() {
   const {id} = useParams();
+  const videoId = Array.isArray(id) ? id[0] : id;
   const [coins, setCoins] = useState(0);
+  const [timeWatched, setTimeWatched] = useState(0);
+  const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
+  const {toast} = useToast();
+
+  const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched]);
+  const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched]);
 
   useEffect(() => {
     // Load coins from local storage
@@ -17,7 +29,61 @@ export default function WatchPage() {
     if (savedCoins) {
       setCoins(parseInt(savedCoins, 10));
     }
-  }, []);
+
+    // Check if reward for this video was already claimed today
+    const lastClaimed = localStorage.getItem(`videoClaim_${videoId}`);
+    if (lastClaimed) {
+        const lastClaimDate = new Date(lastClaimed);
+        const today = new Date();
+        if (lastClaimDate.getFullYear() === today.getFullYear() &&
+            lastClaimDate.getMonth() === today.getMonth() &&
+            lastClaimDate.getDate() === today.getDate()) {
+            setRewardClaimedToday(true);
+            setTimeWatched(REWARD_DURATION_SECONDS);
+        }
+    }
+  }, [videoId]);
+
+  useEffect(() => {
+    if (rewardClaimedToday || isTimerComplete) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeWatched(prevTime => {
+        if (prevTime < REWARD_DURATION_SECONDS) {
+          return prevTime + 1;
+        }
+        clearInterval(timer);
+        return prevTime;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [rewardClaimedToday, isTimerComplete]);
+
+
+  const handleClaimReward = () => {
+    const newTotalCoins = coins + REWARD_AMOUNT;
+    setCoins(newTotalCoins);
+    localStorage.setItem('userCoins', newTotalCoins.toString());
+    
+    const today = new Date().toISOString();
+    localStorage.setItem(`videoClaim_${videoId}`, today);
+    setRewardClaimedToday(true);
+
+    toast({
+        title: "Reward Claimed!",
+        description: `You've earned ${REWARD_AMOUNT} coins.`,
+        action: <CheckCircle className="text-green-500" />
+    });
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -47,17 +113,21 @@ export default function WatchPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-center p-8 space-y-4">
-                        <p className="text-lg">Watch for 3 minutes to earn</p>
+                        <p className="text-lg">Watch for {REWARD_DURATION_SECONDS / 60} minutes to earn</p>
                         <p className="text-4xl font-bold flex items-center justify-center gap-2">
-                           30 <Coins className="w-8 h-8 text-yellow-500" />
+                           {REWARD_AMOUNT} <Coins className="w-8 h-8 text-yellow-500" />
                         </p>
-                         <div className="w-full bg-muted rounded-full h-4">
-                           <div className="bg-primary h-4 rounded-full" style={{ width: '0%' }}></div>
-                         </div>
-                        <p className="text-sm text-muted-foreground">00:00 / 03:00</p>
+                         <Progress value={progress} className="h-4" />
+                        <p className="text-sm text-muted-foreground">
+                            {formatTime(timeWatched)} / {formatTime(REWARD_DURATION_SECONDS)}
+                        </p>
                     </div>
-                    <Button className="w-full" disabled>
-                        Claim Reward
+                    <Button 
+                        className="w-full" 
+                        disabled={!isTimerComplete || rewardClaimedToday}
+                        onClick={handleClaimReward}
+                    >
+                        {rewardClaimedToday ? "Reward Claimed Today" : (isTimerComplete ? "Claim Reward" : "Watch to Unlock")}
                     </Button>
                 </CardContent>
              </Card>
@@ -66,7 +136,7 @@ export default function WatchPage() {
             <Card className="overflow-hidden">
                  <div className="relative aspect-video">
                     <iframe
-                      src={`https://www.youtube.com/embed/${id}?autoplay=1`}
+                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
                       title="YouTube video player"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
