@@ -13,6 +13,17 @@ import Image from 'next/image';
 
 const REWARD_AMOUNT = 30;
 
+// YouTube Player states
+const YT_PLAYER_STATE = {
+  UNSTARTED: -1,
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+  BUFFERING: 3,
+  CUED: 5,
+};
+
+
 export default function WatchPage() {
   const {id} = useParams();
   const searchParams = useSearchParams();
@@ -29,13 +40,15 @@ export default function WatchPage() {
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedToday, setRewardClaimedToday] = useState(false);
-  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [isTimerPaused, setIsTimerPaused] = useState(true); // Start as paused
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
+  const playerRef = useRef<any>(null);
 
   const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
 
+  // Load user data from localStorage
   useEffect(() => {
     const savedCoins = localStorage.getItem('userCoins');
     if (savedCoins) {
@@ -54,7 +67,54 @@ export default function WatchPage() {
         }
     }
   }, [videoId]);
+  
+  // Load YouTube Player API and initialize player
+  useEffect(() => {
+    const onYouTubeIframeAPIReady = () => {
+      playerRef.current = new (window as any).YT.Player('youtube-player', {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+        },
+        events: {
+          onReady: (event: any) => {
+             // Autoplay might not work on all browsers, so we explicitly play it.
+            event.target.playVideo();
+          },
+          onStateChange: (event: any) => {
+            if (event.data === YT_PLAYER_STATE.PLAYING) {
+              setIsTimerPaused(false);
+            } else {
+              setIsTimerPaused(true);
+            }
+          },
+        },
+      });
+    };
+    
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      (window as any).onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
+    } else {
+        onYouTubeIframeAPIReady();
+    }
 
+    return () => {
+        if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+            playerRef.current.destroy();
+        }
+    }
+
+  }, [videoId]);
+
+
+  // Main timer interval
   useEffect(() => {
     if (rewardClaimedToday || isTimerComplete || isTimerPaused) {
       return;
@@ -73,18 +133,24 @@ export default function WatchPage() {
     return () => clearInterval(timer);
   }, [rewardClaimedToday, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS]);
 
+  // Handle browser tab visibility
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setIsTimerPaused(true);
-        const { id } = toast({
-          title: "Timer Paused",
-          description: "Return to this tab to continue earning.",
+      const isHidden = document.hidden;
+       
+      if (isHidden) {
+         setIsTimerPaused(true);
+         const { id } = toast({
+          title: "टाइमर रोक दिया गया",
+          description: "कमाना जारी रखने के लिए इस टैब पर वापस आएँ।",
           duration: Infinity,
         });
         toastId.current = id;
       } else {
-        setIsTimerPaused(false);
+        // Only unpause if the video is supposed to be playing
+        if (playerRef.current && playerRef.current.getPlayerState() === YT_PLAYER_STATE.PLAYING) {
+           setIsTimerPaused(false);
+        }
         if (toastId.current) {
             dismiss(toastId.current);
             toastId.current = null;
@@ -175,14 +241,7 @@ export default function WatchPage() {
         <div>
             <Card className="overflow-hidden">
                  <div className={isShort ? "relative aspect-[9/16] max-h-[70vh] mx-auto" : "relative aspect-video"}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                      title="YouTube video player"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute top-0 left-0 w-full h-full"
-                    ></iframe>
+                    <div id="youtube-player"></div>
                 </div>
             </Card>
             <Card className="mt-4">
@@ -210,4 +269,5 @@ export default function WatchPage() {
       </main>
     </div>
   );
-}
+
+    
