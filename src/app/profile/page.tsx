@@ -16,6 +16,15 @@ import Link from 'next/link';
 const formSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters." }),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+});
+
+const loginSchema = z.object({
+    name: z.string().min(1, { message: "Name is required." }),
+    password: z.string().min(1, { message: "Password is required." }),
 });
 
 type UserData = {
@@ -31,25 +40,41 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is logged in
+    // Check if user is logged in from localStorage
     const loggedInUser = localStorage.getItem('currentUser');
     if (loggedInUser) {
-      const user = JSON.parse(loggedInUser);
-      setCurrentUser(user);
-      setIsLoggedIn(true);
-      
-      const savedCoins = localStorage.getItem('userCoins');
-      setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
+      try {
+        const user = JSON.parse(loggedInUser);
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
+        setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
+      } catch (e) {
+        console.error("Failed to parse user data from localStorage", e);
+        localStorage.removeItem('currentUser');
+      }
     }
   }, []);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const currentFormSchema = isLoginView ? loginSchema : formSchema;
+
+  const form = useForm<z.infer<typeof currentFormSchema>>({
+    resolver: zodResolver(currentFormSchema),
     defaultValues: {
       name: '',
       password: '',
+      ...(isLoginView ? {} : { confirmPassword: '' }),
     },
   });
+
+   useEffect(() => {
+    form.reset({
+      name: '',
+      password: '',
+      ...(isLoginView ? {} : { confirmPassword: '' }),
+    });
+  }, [isLoginView, form]);
+
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -61,7 +86,7 @@ export default function ProfilePage() {
     });
   };
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof currentFormSchema>) {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
 
@@ -75,7 +100,7 @@ export default function ProfilePage() {
                     localStorage.setItem('currentUser', JSON.stringify({ name: user.name }));
                     setCurrentUser({ name: user.name });
                     setIsLoggedIn(true);
-                    const savedCoins = localStorage.getItem('userCoins');
+                    const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
                     setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
                     toast({ title: "Login Successful!" });
                 } else {
@@ -86,18 +111,16 @@ export default function ProfilePage() {
             }
         } else {
             // Signup logic
-            const existingUser = localStorage.getItem(`user_${values.name}`);
+            const signupValues = values as z.infer<typeof formSchema>;
+            const existingUser = localStorage.getItem(`user_${signupValues.name}`);
             if (existingUser) {
                 toast({ variant: "destructive", title: "User already exists", description: "Please choose a different name or log in." });
             } else {
-                const newUser = { name: values.name, password: values.password };
-                localStorage.setItem(`user_${values.name}`, JSON.stringify(newUser));
-                localStorage.setItem('currentUser', JSON.stringify({ name: values.name }));
-                // Initialize coins for new user if not present
-                if (!localStorage.getItem('userCoins')) {
-                    localStorage.setItem('userCoins', '0');
-                }
-                setCurrentUser({ name: values.name });
+                const newUser = { name: signupValues.name, password: signupValues.password };
+                localStorage.setItem(`user_${signupValues.name}`, JSON.stringify(newUser));
+                localStorage.setItem('currentUser', JSON.stringify({ name: signupValues.name }));
+                localStorage.setItem(`userCoins_${signupValues.name}`, '0');
+                setCurrentUser({ name: signupValues.name });
                 setIsLoggedIn(true);
                 setCoins(0);
                 toast({ title: "Account Created!", description: "You are now logged in." });
@@ -174,31 +197,46 @@ export default function ProfilePage() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Name</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Enter your name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Enter your name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
                     />
                      <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                            <Input type="password" placeholder="Enter your password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                              <Input type="password" placeholder="Enter your password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
                     />
+                    {!isLoginView && (
+                         <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Confirm Password</FormLabel>
+                                <FormControl>
+                                    <Input type="password" placeholder="Confirm your password" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
                     <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                     {isLoading ? 'Processing...' : (isLoginView ? 'Login' : 'Sign Up')}
@@ -217,3 +255,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
