@@ -143,7 +143,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center h-14">
             <Link href="/">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-green-500 hover:bg-green-600">
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600" data-active={true}>
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
@@ -155,10 +155,12 @@ export default function Home() {
               <UserCircle className="w-6 h-6" />
               <span className="text-xs">Channel</span>
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
-              <UserPlus className="w-6 h-6" />
-              <span className="text-xs">Invite</span>
-            </Button>
+            <Link href="https://t.me/Bingyt_bot" target="_blank">
+                <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-purple-500 hover:bg-purple-600">
+                <UserPlus className="w-6 h-6" />
+                <span className="text-xs">Invite</span>
+                </Button>
+            </Link>
           </div>
         </div>
       </nav>
