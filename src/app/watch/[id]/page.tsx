@@ -25,14 +25,6 @@ const YT_PLAYER_STATE = {
   CUED: 5,
 };
 
-type Transaction = {
-    type: 'watch_reward' | 'upload_fee' | 'daily_bonus' | 'initial';
-    amount: number;
-    date: string;
-    description: string;
-};
-
-
 export default function WatchPage() {
   const {id} = useParams();
   const searchParams = useSearchParams();
@@ -204,15 +196,6 @@ export default function WatchPage() {
     };
   }, [toast, dismiss]);
 
-  const addTransaction = (username: string, transaction: Omit<Transaction, 'date'>) => {
-    const newTransaction = { ...transaction, date: new Date().toISOString() };
-    const savedHistory = localStorage.getItem(`coinHistory_${username}`);
-    const history = savedHistory ? JSON.parse(savedHistory) : [];
-    const updatedHistory = [newTransaction, ...history];
-    localStorage.setItem(`coinHistory_${username}`, JSON.stringify(updatedHistory));
-  };
-
-
   const handleClaimReward = () => {
     if (!currentUser || !isLoggedIn) return;
 
@@ -236,13 +219,6 @@ export default function WatchPage() {
     const newDailyAmount = dailyCoinsEarned + REWARD_AMOUNT;
     setDailyCoinsEarned(newDailyAmount);
     localStorage.setItem(`dailyCoinData_${currentUser.name}`, JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
-    
-    addTransaction(currentUser.name, {
-        type: 'watch_reward',
-        amount: REWARD_AMOUNT,
-        description: `Watched: ${videoTitle}`
-    });
-
 
     toast({
         title: "Reward Claimed!",
@@ -349,3 +325,4 @@ export default function WatchPage() {
       </main>
     </div>
   );
+}

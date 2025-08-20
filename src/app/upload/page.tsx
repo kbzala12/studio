@@ -16,13 +16,6 @@ import { useRouter } from 'next/navigation';
 
 const UPLOAD_COST = 1250;
 
-type Transaction = {
-    type: 'watch_reward' | 'upload_fee' | 'daily_bonus' | 'initial';
-    amount: number;
-    date: string;
-    description: string;
-};
-
 const formSchema = z.object({
   videoUrl: z.string().url({ message: "Please enter a valid YouTube URL." }).regex(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/, 'Must be a valid YouTube video URL.'),
 });
@@ -59,15 +52,6 @@ export default function UploadPage() {
     },
   });
 
-  const addTransaction = (username: string, transaction: Omit<Transaction, 'date'>) => {
-    const newTransaction = { ...transaction, date: new Date().toISOString() };
-    const savedHistory = localStorage.getItem(`coinHistory_${username}`);
-    const history = savedHistory ? JSON.parse(savedHistory) : [];
-    const updatedHistory = [newTransaction, ...history];
-    localStorage.setItem(`coinHistory_${username}`, JSON.stringify(updatedHistory));
-  };
-
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!currentUser || !isLoggedIn) {
         toast({
@@ -97,12 +81,6 @@ export default function UploadPage() {
       setCoins(newTotalCoins);
       localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
       setHasSufficientCoins(newTotalCoins >= UPLOAD_COST);
-
-      addTransaction(currentUser.name, {
-          type: 'upload_fee',
-          amount: -UPLOAD_COST,
-          description: `Fee for submitting video: ${values.videoUrl.substring(0, 30)}...`
-      });
 
       const submittedVideos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
       submittedVideos.push({ url: values.videoUrl, submittedBy: currentUser.name, submittedAt: new Date().toISOString(), status: 'pending' });
