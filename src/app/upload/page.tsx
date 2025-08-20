@@ -92,7 +92,7 @@ export default function UploadPage() {
                     <ArrowLeft />
                 </Button>
             </Link>
-            <h1 className="text-xl font-bold">Upload Video</h1>
+            <h1 className="text-xl font-bold">Submit Video URL</h1>
             </div>
             <div className="flex items-center gap-2">
                 <Coins className="w-6 h-6 text-yellow-500" />
