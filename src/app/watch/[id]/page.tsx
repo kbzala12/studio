@@ -10,6 +10,7 @@ import {Progress} from '@/components/ui/progress';
 import {useToast} from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const REWARD_AMOUNT = 30;
 const DAILY_COIN_LIMIT = 650;
@@ -24,10 +25,18 @@ const YT_PLAYER_STATE = {
   CUED: 5,
 };
 
+type Transaction = {
+    type: 'watch_reward' | 'upload_fee' | 'daily_bonus' | 'initial';
+    amount: number;
+    date: string;
+    description: string;
+};
+
 
 export default function WatchPage() {
   const {id} = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const videoId = Array.isArray(id) ? id[0] : id;
   
   const videoTitle = searchParams.get('title') || 'Video Title';
@@ -38,11 +47,13 @@ export default function WatchPage() {
 
   const REWARD_DURATION_SECONDS = isShort ? 60 : 180;
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
   const [coins, setCoins] = useState(0);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
   const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
-  const [isTimerPaused, setIsTimerPaused] = useState(true); // Start as paused
+  const [isTimerPaused, setIsTimerPaused] = useState(true);
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
   const playerRef = useRef<any>(null);
@@ -51,43 +62,50 @@ export default function WatchPage() {
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
   const hasReachedDailyLimit = useMemo(() => dailyCoinsEarned >= DAILY_COIN_LIMIT, [dailyCoinsEarned]);
 
-  // Load user data from localStorage
+  
   useEffect(() => {
-    const savedCoins = localStorage.getItem('userCoins');
-    if (savedCoins) {
-      setCoins(parseInt(savedCoins, 10));
+    const loggedInUser = localStorage.getItem('currentUser');
+    if (loggedInUser) {
+        const user = JSON.parse(loggedInUser);
+        setCurrentUser(user);
+        setIsLoggedIn(true);
+        loadUserData(user.name);
+    } else {
+        setIsLoggedIn(false);
     }
+  }, [videoId]);
+
+  const loadUserData = (username: string) => {
+    const savedCoins = localStorage.getItem(`userCoins_${username}`);
+    setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
     
-    // Check daily earnings
-    const dailyData = localStorage.getItem('dailyCoinData');
+    const dailyData = localStorage.getItem(`dailyCoinData_${username}`);
     if (dailyData) {
         const { date, amount } = JSON.parse(dailyData);
         const today = new Date().toISOString().split('T')[0];
         if (date === today) {
             setDailyCoinsEarned(amount);
         } else {
-            // Reset for the new day
-            localStorage.setItem('dailyCoinData', JSON.stringify({ date: today, amount: 0 }));
+            localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today, amount: 0 }));
+            setDailyCoinsEarned(0);
         }
     } else {
         const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem('dailyCoinData', JSON.stringify({ date: today, amount: 0 }));
+        localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today, amount: 0 }));
+        setDailyCoinsEarned(0);
     }
 
-
-    const lastClaimed = localStorage.getItem(`videoClaim_${videoId}`);
+    const lastClaimed = localStorage.getItem(`videoClaim_${username}_${videoId}`);
     if (lastClaimed) {
         const lastClaimDate = new Date(lastClaimed);
         const today = new Date();
-        if (lastClaimDate.getFullYear() === today.getFullYear() &&
-            lastClaimDate.getMonth() === today.getMonth() &&
-            lastClaimDate.getDate() === today.getDate()) {
+        if (lastClaimDate.toDateString() === today.toDateString()) {
             setRewardClaimedForVideo(true);
             setTimeWatched(REWARD_DURATION_SECONDS);
         }
     }
-  }, [videoId]);
-  
+  }
+
   // Load YouTube Player API and initialize player
   useEffect(() => {
     const onYouTubeIframeAPIReady = () => {
@@ -101,7 +119,6 @@ export default function WatchPage() {
         },
         events: {
           onReady: (event: any) => {
-             // Autoplay might not work on all browsers, so we explicitly play it.
             event.target.playVideo();
           },
           onStateChange: (event: any) => {
@@ -136,7 +153,7 @@ export default function WatchPage() {
 
   // Main timer interval
   useEffect(() => {
-    if (rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
+    if (!isLoggedIn || rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
       return;
     }
 
@@ -151,7 +168,7 @@ export default function WatchPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [rewardClaimedForVideo, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS, hasReachedDailyLimit]);
+  }, [isLoggedIn, rewardClaimedForVideo, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS, hasReachedDailyLimit]);
 
   // Handle browser tab visibility
   useEffect(() => {
@@ -161,13 +178,12 @@ export default function WatchPage() {
       if (isHidden) {
          setIsTimerPaused(true);
          const { id } = toast({
-          title: "टाइमर रोक दिया गया",
-          description: "कमाना जारी रखने के लिए इस टैब पर वापस आएँ।",
+          title: "Timer Paused",
+          description: "Come back to this tab to continue earning.",
           duration: Infinity,
         });
         toastId.current = id;
       } else {
-        // Only unpause if the video is supposed to be playing
         if (playerRef.current && playerRef.current.getPlayerState() === YT_PLAYER_STATE.PLAYING) {
            setIsTimerPaused(false);
         }
@@ -188,8 +204,18 @@ export default function WatchPage() {
     };
   }, [toast, dismiss]);
 
+  const addTransaction = (username: string, transaction: Omit<Transaction, 'date'>) => {
+    const newTransaction = { ...transaction, date: new Date().toISOString() };
+    const savedHistory = localStorage.getItem(`coinHistory_${username}`);
+    const history = savedHistory ? JSON.parse(savedHistory) : [];
+    const updatedHistory = [newTransaction, ...history];
+    localStorage.setItem(`coinHistory_${username}`, JSON.stringify(updatedHistory));
+  };
+
 
   const handleClaimReward = () => {
+    if (!currentUser || !isLoggedIn) return;
+
     if (hasReachedDailyLimit) {
         toast({
             variant: "destructive",
@@ -201,15 +227,22 @@ export default function WatchPage() {
       
     const newTotalCoins = coins + REWARD_AMOUNT;
     setCoins(newTotalCoins);
-    localStorage.setItem('userCoins', newTotalCoins.toString());
+    localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
     
     const today = new Date();
-    localStorage.setItem(`videoClaim_${videoId}`, today.toISOString());
+    localStorage.setItem(`videoClaim_${currentUser.name}_${videoId}`, today.toISOString());
     setRewardClaimedForVideo(true);
 
     const newDailyAmount = dailyCoinsEarned + REWARD_AMOUNT;
     setDailyCoinsEarned(newDailyAmount);
-    localStorage.setItem('dailyCoinData', JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
+    localStorage.setItem(`dailyCoinData_${currentUser.name}`, JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
+    
+    addTransaction(currentUser.name, {
+        type: 'watch_reward',
+        amount: REWARD_AMOUNT,
+        description: `Watched: ${videoTitle}`
+    });
+
 
     toast({
         title: "Reward Claimed!",
@@ -219,7 +252,8 @@ export default function WatchPage() {
   };
 
   const getButtonText = () => {
-    if (rewardClaimedForVideo) return "Reward Claimed";
+    if (!isLoggedIn) return "Login to Earn";
+    if (rewardClaimedForVideo) return "Reward Claimed Today";
     if (hasReachedDailyLimit) return "Daily Limit Reached";
     if (isTimerComplete) return "Claim Reward";
     if (isTimerPaused) return "Timer Paused";
@@ -243,12 +277,14 @@ export default function WatchPage() {
            </Link>
           <h1 className="text-xl font-bold">Watch & Earn</h1>
         </div>
-        <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <Coins className="w-6 h-6 text-yellow-500" />
-                <span className="text-lg font-bold">{coins}</span>
+        {isLoggedIn && (
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <Coins className="w-6 h-6 text-yellow-500" />
+                    <span className="text-lg font-bold">{coins}</span>
+                </div>
             </div>
-        </div>
+        )}
       </header>
 
       <main className="flex-grow container mx-auto p-4 md:p-6 flex flex-col gap-6">
@@ -274,8 +310,8 @@ export default function WatchPage() {
                     </div>
                     <Button 
                         className="w-full" 
-                        disabled={!isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
-                        onClick={handleClaimReward}
+                        disabled={!isLoggedIn || !isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
+                        onClick={isLoggedIn ? handleClaimReward : () => router.push('/profile')}
                     >
                         {getButtonText()}
                     </Button>
@@ -298,14 +334,14 @@ export default function WatchPage() {
                           <Youtube className="w-12 h-12 text-red-500" />
                         </a>
                         <div>
-                            <a href={`https://www.youtube.com/channel/${videoChannel.replace('@','')}`} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{videoChannel}</a>
+                            <p className="font-semibold">{videoChannel}</p>
                             <p className="text-sm text-muted-foreground">
                               {videoViews} &bull; {videoUploaded}
                             </p>
                         </div>
                     </div>
-                    <p className="mt-4">
-                        Video description will go here. You can add more details about the video.
+                    <p className="mt-4 text-muted-foreground">
+                        Watch the full video on YouTube for more details. Rewards are only provided for watching here.
                     </p>
                 </CardContent>
             </Card>
@@ -313,5 +349,3 @@ export default function WatchPage() {
       </main>
     </div>
   );
-
-    
