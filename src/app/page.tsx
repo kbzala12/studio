@@ -78,6 +78,27 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
+        <Link href="/profile" passHref>
+          <Button variant="ghost" className="flex items-center gap-2">
+            {currentUser ? (
+              <>
+                <User className="w-6 h-6" />
+                <div className="flex flex-col items-start">
+                    <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-3 h-3 text-yellow-400" />
+                      <span className="text-xs">{coins}</span>
+                    </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <User className="w-6 h-6" />
+                <span className="text-sm">Profile</span>
+              </>
+            )}
+          </Button>
+        </Link>
       </header>
       
       <main className="flex-grow p-6 pb-24">
@@ -186,25 +207,7 @@ export default function Home() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Link href="/profile" passHref>
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
-                {currentUser ? (
-                  <>
-                    <User className="w-6 h-6" />
-                    <span className="text-xs truncate max-w-[60px]">{currentUser.name}</span>
-                    <div className="flex items-center gap-1">
-                      <Coins className="w-3 h-3 text-yellow-300" />
-                      <span className="text-xs font-bold">{coins}</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <User className="w-6 h-6" />
-                    <span className="text-xs">Profile</span>
-                  </>
-                )}
-              </Button>
-            </Link>
+            
             <Link href="/upload" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
                   <Upload className="w-6 h-6" />
