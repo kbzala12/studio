@@ -1,6 +1,6 @@
 'use client';
 
-import {Coins, Home, Timer, CheckCircle, Youtube} from 'lucide-react';
+import {Coins, Timer, CheckCircle, Youtube} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo} from 'react';
 import {Button} from '@/components/ui/button';
@@ -98,11 +98,6 @@ export default function WatchPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
        <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
-           <Link href="/">
-            <Button variant="ghost" size="icon">
-                <Home className="w-6 h-6" />
-            </Button>
-          </Link>
           <h1 className="text-xl font-bold">Watch & Earn</h1>
         </div>
         <div className="flex items-center gap-4">

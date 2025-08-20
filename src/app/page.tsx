@@ -81,19 +81,19 @@ export default function Home() {
        <nav className="border-b">
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center">
-            <Button variant="ghost" className="flex-col h-auto py-2">
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
               <Video className="w-6 h-6" />
               <span className="text-xs">Video</span>
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2">
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
               <Flame className="w-6 h-6" />
               <span className="text-xs">Shorts</span>
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2">
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
               <UserCircle className="w-6 h-6" />
               <span className="text-xs">Channel</span>
             </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2">
+            <Button variant="outline" className="flex-col h-auto py-2 bg-white text-black hover:bg-gray-100">
               <PlusCircle className="w-6 h-6" />
               <span className="text-xs">Upload</span>
             </Button>
