@@ -37,35 +37,15 @@ export default function Home() {
       views: '4.5K views',
       uploaded: '4 days ago',
     },
-    {
-      id: 'C8LqsLxF7mQ',
-      title: 'YouTube Video 5',
-      channel: 'Channel 5',
-      views: '5.6K views',
-      uploaded: '5 days ago',
-    },
-    {
-      id: 'G2YCGapVbEc',
-      title: 'YouTube Video 6',
-      channel: 'Channel 6',
-      views: '6.7K views',
-      uploaded: '6 days ago',
-    },
-     {
-      id: 'JkzAlNEuiyk',
-      title: 'YouTube Video 7',
-      channel: 'Channel 7',
-      views: '7.8K views',
-      uploaded: '7 days ago',
-    },
-    {
-      id: '1-2981cjwhM',
-      title: 'YouTube Video 8',
-      channel: 'Channel 8',
-      views: '8.9K views',
-      uploaded: '8 days ago',
-    }
   ].map(v => ({...v, thumbnail: `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`}));
+
+  const shorts = [
+    { id: 'oV8exPIMdSY', title: 'YouTube Short 1', views: '10K views' },
+    { id: 'QuAxFi9V7kg', title: 'YouTube Short 2', views: '12K views' },
+    { id: 'dVUy6aWYgHI', title: 'YouTube Short 3', views: '15K views' },
+    { id: 'DAcFJ-MmvhQ', title: 'YouTube Short 4', views: '20K views' },
+  ].map(s => ({...s, thumbnail: `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`, channel: '@ShortsCreator', uploaded: '1 day ago'}));
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -77,44 +57,86 @@ export default function Home() {
       </header>
       
       <main className="flex-grow p-6 pb-24">
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {videos.map((video) => (
-            <Link 
-              href={`/watch/${video.id}?title=${encodeURIComponent(video.title)}&channel=${encodeURIComponent(video.channel)}&views=${encodeURIComponent(video.views)}&uploaded=${encodeURIComponent(video.uploaded)}`}
-              key={video.id} 
-              className="group"
-            >
-              <div>
-                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="relative aspect-video">
-                      <Image
-                        src={video.thumbnail}
-                        alt={video.title}
-                        layout="fill"
-                        objectFit="cover"
-                        className="transition-transform duration-300 group-hover:scale-105"
-                        data-ai-hint="video thumbnail"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-                <div className="flex gap-4 pt-3">
-                  <div className="flex-shrink-0">
-                     <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="text-base font-semibold leading-tight">{video.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{video.channel}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {video.views} &bull; {video.uploaded}
-                    </p>
+        
+        <section className="mb-10">
+           <div className="flex items-center gap-2 mb-4">
+            <Flame className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-bold">Shorts</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {shorts.map((short) => (
+              <Link 
+                href={`/watch/${short.id}?title=${encodeURIComponent(short.title)}&channel=${encodeURIComponent(short.channel)}&views=${encodeURIComponent(short.views)}&uploaded=${encodeURIComponent(short.uploaded)}&isShort=true`}
+                key={short.id} 
+                className="group"
+              >
+                <div>
+                  <Card className="overflow-hidden rounded-lg">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-[9/16]">
+                        <Image
+                          src={short.thumbnail}
+                          alt={short.title}
+                          layout="fill"
+                          objectFit="cover"
+                          className="transition-transform duration-300 group-hover:scale-105"
+                          data-ai-hint="youtube short thumbnail"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <div className="pt-2">
+                      <h3 className="text-base font-semibold leading-tight truncate">{short.title}</h3>
+                      <p className="text-sm text-muted-foreground">{short.views}</p>
                   </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <div className="border-t border-border my-6"></div>
+        
+        <section>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {videos.map((video) => (
+              <Link 
+                href={`/watch/${video.id}?title=${encodeURIComponent(video.title)}&channel=${encodeURIComponent(video.channel)}&views=${encodeURIComponent(video.views)}&uploaded=${encodeURIComponent(video.uploaded)}`}
+                key={video.id} 
+                className="group"
+              >
+                <div>
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-video">
+                        <Image
+                          src={video.thumbnail}
+                          alt={video.title}
+                          layout="fill"
+                          objectFit="cover"
+                          className="transition-transform duration-300 group-hover:scale-105"
+                          data-ai-hint="video thumbnail"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <div className="flex gap-4 pt-3">
+                    <div className="flex-shrink-0">
+                       <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                    </div>
+                    <div className="flex flex-col">
+                      <h3 className="text-base font-semibold leading-tight">{video.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{video.channel}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {video.views} &bull; {video.uploaded}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
 
        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black">
@@ -124,12 +146,6 @@ export default function Home() {
               <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-green-500 hover:bg-green-600">
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
-              </Button>
-            </Link>
-            <Link href="/shorts">
-              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-zinc-800 hover:bg-zinc-700">
-                <Flame className="w-6 h-6" />
-                <span className="text-xs">Shorts</span>
               </Button>
             </Link>
              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
