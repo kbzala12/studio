@@ -1,14 +1,37 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, User, Upload, UserPlus } from 'lucide-react';
+import { Flame, Video, User, Upload, UserPlus, Coins } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Home() {
+  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
+  const [coins, setCoins] = useState(0);
+
+  useEffect(() => {
+    // We need to check for window to ensure this runs only on the client
+    if (typeof window !== 'undefined') {
+        const loggedInUser = localStorage.getItem('currentUser');
+        if (loggedInUser) {
+            try {
+                const user = JSON.parse(loggedInUser);
+                setCurrentUser(user);
+                const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
+                setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
+            } catch (e) {
+                console.error("Failed to parse user from localStorage", e);
+                // If parsing fails, clear the invalid item
+                localStorage.removeItem('currentUser');
+            }
+        }
+    }
+  }, []);
+
   const videos = [
     {
       id: 'JkzAlNEuiyk',
@@ -163,11 +186,24 @@ export default function Home() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-             <Link href="/profile" passHref>
-                <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
+            <Link href="/profile" passHref>
+              <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
+                {currentUser ? (
+                  <>
+                    <User className="w-6 h-6" />
+                    <span className="text-xs truncate max-w-[60px]">{currentUser.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-3 h-3 text-yellow-300" />
+                      <span className="text-xs font-bold">{coins}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
                     <User className="w-6 h-6" />
                     <span className="text-xs">Profile</span>
-                </Button>
+                  </>
+                )}
+              </Button>
             </Link>
             <Link href="/upload" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
