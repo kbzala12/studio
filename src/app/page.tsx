@@ -141,19 +141,19 @@ export default function Home() {
        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black">
         <div className="container mx-auto px-4">
           <div className="flex justify-around items-center h-14">
-            <Link href="/">
+            <Link href="/" passHref>
               <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-green-500 hover:bg-green-600" data-active={true}>
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
             </Link>
-             <Link href="/profile">
+             <Link href="/profile" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                     <User className="w-6 h-6" />
                     <span className="text-xs">Profile</span>
                 </Button>
             </Link>
-            <Link href="/upload">
+            <Link href="/upload" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
                   <Upload className="w-6 h-6" />
                   <span className="text-xs">Submit URL</span>
