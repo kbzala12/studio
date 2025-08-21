@@ -3,32 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogIn, UserPlus, LogOut, User, Coins, Bot } from 'lucide-react';
+import { Loader2, LogOut, User, Coins, Bot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-
-const loginSchema = z.object({
-  name: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-const signupSchema = z.object({
-  name: z.string().min(3, 'Username must be at least 3 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
 
 type User = {
   id: string;
@@ -41,19 +22,8 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoginView, setIsLoginView] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { name: '', password: '' },
-  });
-
-  const signupForm = useForm<z.infer<typeof signupSchema>>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { name: '', password: '', confirmPassword: '' },
-  });
   
   useEffect(() => {
     async function checkSession() {
@@ -64,11 +34,6 @@ export default function ProfilePage() {
           setUser(user);
         } else {
           setUser(null);
-          // Check for saved username in local storage
-          const savedUsername = localStorage.getItem('lastUsername');
-          if (savedUsername) {
-            loginForm.setValue('name', savedUsername);
-          }
         }
       } catch (error) {
         setUser(null);
@@ -77,59 +42,8 @@ export default function ProfilePage() {
       }
     }
     checkSession();
-  }, [router, loginForm]);
+  }, [router]);
 
-  const handleLogin = async (values: z.infer<typeof loginSchema>) => {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Login failed');
-      }
-      const { user } = await res.json();
-      setUser(user);
-      // Save username to local storage
-      localStorage.setItem('lastUsername', user.name);
-      router.refresh();
-      router.push('/');
-      toast({ title: 'Login Successful', description: `Welcome back, ${user.name}!` });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSignup = async (values: z.infer<typeof signupSchema>) => {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: values.name, password: values.password }),
-      });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Signup failed');
-      }
-      const { user } = await res.json();
-      setUser(user);
-      // Save username to local storage
-      localStorage.setItem('lastUsername', user.name);
-      router.refresh();
-      router.push('/');
-      toast({ title: 'Signup Successful', description: `Welcome, ${user.name}!` });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -193,76 +107,18 @@ export default function ProfilePage() {
     <div className="flex h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{isLoginView ? 'Login' : 'Sign Up'}</CardTitle>
+          <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            {isLoginView ? 'Enter your credentials to access your account.' : 'Create a new account to get started.'}
+            Use your Telegram account to login.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoginView ? (
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                <FormField control={loginForm.control} name="name" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl><Input placeholder="yourname" {...field} autoComplete="username" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={loginForm.control} name="password" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <LogIn className="mr-2" />}
-                  Login
-                </Button>
-              </form>
-            </Form>
-          ) : (
-            <Form {...signupForm}>
-              <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                <FormField control={signupForm.control} name="name" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl><Input placeholder="choose a username" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={signupForm.control} name="password" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="create a password" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={signupForm.control} name="confirmPassword" render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl><Input type="password" placeholder="confirm your password" {...field} /></FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )} />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <UserPlus className="mr-2" />}
-                  Sign Up
-                </Button>
-              </form>
-            </Form>
-          )}
-          <Separator className="my-4" />
           <div className="space-y-2">
             <a href="https://t.me/Bingyt_bot" target="_blank" rel="noopener noreferrer" className='w-full'>
                 <Button variant="outline" className="w-full bg-blue-500 text-white hover:bg-blue-600">
                     <Bot className="mr-2" /> Login with Telegram
                 </Button>
             </a>
-             <Button variant="link" className="w-full" onClick={() => setIsLoginView(!isLoginView)}>
-                {isLoginView ? 'Need an account? Sign Up' : 'Already have an account? Login'}
-            </Button>
           </div>
         </CardContent>
       </Card>
