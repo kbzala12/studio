@@ -8,11 +8,12 @@ import { BetterSqlite3Adapter } from '@lucia-auth/adapter-sqlite';
 import type { Database } from 'sqlite';
 
 export interface DatabaseUser {
-	id: string; // Changed to string to match Lucia's expectations
+	id: string; 
 	name: string;
 	coins: number;
     isAdmin: boolean;
     password?: string;
+    telegramId?: string | null;
 }
 
 const dbPromise: Promise<Database> = getDb();
@@ -75,6 +76,6 @@ declare module 'lucia' {
 	interface Register {
 		Lucia: typeof lucia;
         DatabaseUserAttributes: Omit<DatabaseUser, "id" | "password">;
-        UserId: string; // Ensure UserId is string
+        UserId: string;
 	}
 }
