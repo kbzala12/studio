@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Coins, LogOut, ArrowLeft } from 'lucide-react';
+import { Loader2, User, Coins, LogOut, ArrowLeft, Edit } from 'lucide-react';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
@@ -154,24 +155,33 @@ export default function ProfilePage() {
                     </Link>
                     <h1 className="text-xl font-bold">Profile</h1>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                    <LogOut />
-                </Button>
             </header>
-            <main className="flex-grow flex flex-col items-center p-4 gap-4 overflow-y-auto">
-                <Card className="w-full max-w-md shadow-2xl">
-                    <CardHeader className="items-center text-center">
-                        <User className="w-20 h-20 text-primary p-3 bg-primary/10 rounded-full" />
-                        <CardTitle className="text-3xl font-bold mt-4">{currentUser.name}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center space-y-4">
-                        <div className="text-4xl font-bold flex items-center justify-center gap-3">
-                            <Coins className="w-10 h-10 text-yellow-500" />
-                            <span>{coins}</span>
-                        </div>
-                        <p className="text-muted-foreground -mt-2">Your Coin Balance</p>
-                    </CardContent>
-                </Card>
+            <main className="flex-grow flex flex-col items-center justify-between p-4 gap-4 overflow-y-auto">
+                <div className="w-full max-w-md">
+                    <Card className="w-full shadow-2xl">
+                        <CardHeader className="items-center text-center">
+                            <User className="w-20 h-20 text-primary p-3 bg-primary/10 rounded-full" />
+                            <CardTitle className="text-3xl font-bold mt-4">{currentUser.name}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center space-y-4">
+                            <div className="text-4xl font-bold flex items-center justify-center gap-3">
+                                <Coins className="w-10 h-10 text-yellow-500" />
+                                <span>{coins}</span>
+                            </div>
+                            <p className="text-muted-foreground -mt-2">Your Coin Balance</p>
+                        </CardContent>
+                    </Card>
+                    <Button variant="outline" className="w-full mt-4">
+                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                    </Button>
+                </div>
+                
+                <div className="w-full max-w-md">
+                    <Separator className="my-4" />
+                    <Button variant="destructive" className="w-full" onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" /> Logout
+                    </Button>
+                </div>
             </main>
         </div>
     );
@@ -263,3 +273,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
