@@ -5,20 +5,20 @@ import { open, Database } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-let db: Database | null = null;
+// Singleton-style database connection
+let dbInstance: Database | null = null;
 
 async function initializeDatabase() {
-  if (!db) {
     const dbPath = path.join(process.cwd(), 'database.db');
-    const newDb = await open({
+    const db = await open({
       filename: dbPath,
       driver: sqlite3.Database
     });
 
-    await newDb.exec('PRAGMA foreign_keys = ON;');
-    await newDb.exec('PRAGMA journal_mode = WAL;');
+    await db.exec('PRAGMA foreign_keys = ON;');
+    await db.exec('PRAGMA journal_mode = WAL;');
     
-    await newDb.exec(`
+    await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
@@ -27,7 +27,7 @@ async function initializeDatabase() {
         isAdmin BOOLEAN DEFAULT FALSE NOT NULL
       );
     `);
-     await newDb.exec(`
+     await db.exec(`
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         expires_at INTEGER NOT NULL,
@@ -35,7 +35,7 @@ async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id)
       );
     `);
-    await newDb.exec(`
+    await db.exec(`
       CREATE TABLE IF NOT EXISTS videos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         url TEXT NOT NULL,
@@ -45,7 +45,7 @@ async function initializeDatabase() {
         FOREIGN KEY (submittedByUserId) REFERENCES users(id)
       );
     `);
-     await newDb.exec(`
+     await db.exec(`
       CREATE TABLE IF NOT EXISTS rewards (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           userId TEXT NOT NULL,
@@ -56,7 +56,7 @@ async function initializeDatabase() {
           FOREIGN KEY (userId) REFERENCES users(id)
       );
     `);
-     await newDb.exec(`
+     await db.exec(`
       CREATE TABLE IF NOT EXISTS subscriptions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           userId TEXT NOT NULL,
@@ -66,11 +66,12 @@ async function initializeDatabase() {
       );
     `);
 
-    db = newDb;
-  }
-  return db;
+    return db;
 }
 
 export async function getDb() {
-  return await initializeDatabase();
+  if (!dbInstance) {
+    dbInstance = await initializeDatabase();
+  }
+  return dbInstance;
 }
