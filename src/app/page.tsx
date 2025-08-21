@@ -9,6 +9,8 @@ import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-reac
 import Image from 'next/image';
 import Link from 'next/link';
 
+const ADMIN_USERNAME = 'Zala kb';
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
   const [coins, setCoins] = useState(0);
@@ -210,7 +212,7 @@ export default function Home() {
               </AlertDialogContent>
             </AlertDialog>
             
-            {currentUser?.name === 'zala kb' && (
+            {currentUser?.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && (
                  <Link href="/admin" passHref>
                     <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                         <Shield className="w-6 h-6" />

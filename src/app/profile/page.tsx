@@ -32,7 +32,8 @@ type UserData = {
     name: string;
 };
 
-const ADMIN_USERNAME = 'zala kb';
+const ADMIN_USERNAME = 'Zala kb';
+const ADMIN_PASSWORD = 'zala1234567';
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -124,7 +125,13 @@ export default function ProfilePage() {
             if (existingUser) {
                 toast({ variant: "destructive", title: "User already exists", description: "Please choose a different name or log in." });
             } else {
-                const newUser = { name: signupValues.name, password: signupValues.password };
+                let password = signupValues.password;
+                // Force admin password
+                if (signupValues.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+                    password = ADMIN_PASSWORD;
+                }
+                
+                const newUser = { name: signupValues.name, password: password };
                 const username = signupValues.name;
                 
                 localStorage.setItem(`user_${username}`, JSON.stringify(newUser));
@@ -146,7 +153,7 @@ export default function ProfilePage() {
   }
 
   if (isLoggedIn && currentUser) {
-    const isAdmin = currentUser.name === ADMIN_USERNAME;
+    const isAdmin = currentUser.name.toLowerCase() === ADMIN_USERNAME.toLowerCase();
 
     return (
         <div className="flex flex-col h-screen bg-background text-foreground">

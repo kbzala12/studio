@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
-const ADMIN_USERNAME = 'zala kb';
+const ADMIN_USERNAME = 'Zala kb';
 
 type SubmittedVideo = {
     url: string;
@@ -40,7 +40,7 @@ export default function AdminPage() {
         if (loggedInUser) {
             const user = JSON.parse(loggedInUser);
             setCurrentUser(user);
-            if (user.name === ADMIN_USERNAME) {
+            if (user.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
                 setIsAuthorized(true);
                 loadSubmittedVideos();
                 loadAllUsersData();
@@ -58,7 +58,7 @@ export default function AdminPage() {
         const users: UserData[] = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('user_') && key !== `user_${ADMIN_USERNAME}`) {
+            if (key && key.startsWith('user_') && key.substring(5).toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
                 const userName = key.substring(5);
                 const userCoins = localStorage.getItem(`userCoins_${userName}`);
                 users.push({
