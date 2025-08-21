@@ -46,7 +46,8 @@ export default function WatchPage() {
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
   const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
-  const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
+  const [nextGiftTimestamp, setNextGiftTimestamp] = useState<number | null>(null);
+  const [countdown, setCountdown] = useState('');
   const [isTimerPaused, setIsTimerPaused] = useState(true);
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
@@ -55,6 +56,7 @@ export default function WatchPage() {
   const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
   const hasReachedDailyLimit = useMemo(() => dailyCoinsEarned >= DAILY_COIN_LIMIT, [dailyCoinsEarned]);
+  const isGiftClaimed = useMemo(() => nextGiftTimestamp !== null && new Date().getTime() < nextGiftTimestamp, [nextGiftTimestamp]);
 
   
   useEffect(() => {
@@ -91,12 +93,9 @@ export default function WatchPage() {
     
     const giftData = localStorage.getItem(`dailyGiftData_${username}`);
     if(giftData) {
-        const giftDate = JSON.parse(giftData).date;
-        const today = new Date().toISOString().split('T')[0];
-        if (giftDate === today) {
-            setDailyGiftClaimed(true);
-        } else {
-            setDailyGiftClaimed(false);
+        const timestamp = JSON.parse(giftData).nextGiftTimestamp;
+        if (timestamp && new Date().getTime() < timestamp) {
+            setNextGiftTimestamp(timestamp);
         }
     }
 
@@ -111,6 +110,38 @@ export default function WatchPage() {
         }
     }
   }
+
+  // Countdown timer effect for daily gift
+  useEffect(() => {
+    if (!nextGiftTimestamp) {
+        setCountdown('');
+        return;
+    }
+
+    const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = nextGiftTimestamp - now;
+
+        if (distance <= 0) {
+            clearInterval(interval);
+            setCountdown('');
+            setNextGiftTimestamp(null);
+            if(currentUser) {
+                localStorage.removeItem(`dailyGiftData_${currentUser.name}`);
+            }
+            return;
+        }
+
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        setCountdown(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextGiftTimestamp, currentUser]);
+
 
   // Load YouTube Player API and initialize player
   useEffect(() => {
@@ -157,7 +188,7 @@ export default function WatchPage() {
   }, [videoId]);
 
 
-  // Main timer interval
+  // Main timer interval for video reward
   useEffect(() => {
     if (!isLoggedIn || rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
       return;
@@ -211,15 +242,15 @@ export default function WatchPage() {
   }, [toast, dismiss]);
   
   const handleClaimDailyGift = () => {
-    if (!currentUser || !isLoggedIn || dailyGiftClaimed) return;
+    if (!currentUser || !isLoggedIn || isGiftClaimed) return;
 
     const newTotalCoins = coins + DAILY_GIFT_AMOUNT;
     setCoins(newTotalCoins);
     localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
     
-    const today = new Date().toISOString().split('T')[0];
-    localStorage.setItem(`dailyGiftData_${currentUser.name}`, JSON.stringify({ date: today }));
-    setDailyGiftClaimed(true);
+    const nextTimestamp = new Date().getTime() + 24 * 60 * 60 * 1000;
+    localStorage.setItem(`dailyGiftData_${currentUser.name}`, JSON.stringify({ nextGiftTimestamp: nextTimestamp }));
+    setNextGiftTimestamp(nextTimestamp);
 
     toast({
         title: "Daily Gift Claimed!",
@@ -325,27 +356,11 @@ export default function WatchPage() {
                     </Button>
                 </CardContent>
              </Card>
-            {isLoggedIn && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Daily Gift</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
-                        <p className="text-lg">YT kb bot</p>
-                        <button onClick={handleClaimDailyGift} disabled={dailyGiftClaimed} className="disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                        {dailyGiftClaimed ? (
-                            <PartyPopper className="w-20 h-20 text-primary" />
-                        ) : (
-                            <Gift className="w-20 h-20 text-primary" />
-                        )}
-                        </button>
-                        <p className="text-sm text-muted-foreground">
-                            {dailyGiftClaimed ? "You've claimed your gift for today!" : `Click the gift to get ${DAILY_GIFT_AMOUNT} coins!`}
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
+            
+             <div className="md:col-start-2 md:row-start-1"> {/* Placeholder for grid layout */}
+             </div>
         </div>
+        
         <div>
             <Card className="overflow-hidden">
                  <div className={isShort ? "relative aspect-[9/16] max-h-[70vh] mx-auto" : "relative aspect-video"}>
@@ -374,7 +389,39 @@ export default function WatchPage() {
                 </CardContent>
             </Card>
         </div>
+
+        {isLoggedIn && (
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>Daily Gift</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
+                    <p className="text-lg">YT kb bot</p>
+                    
+                    {isGiftClaimed ? (
+                         <>
+                            <PartyPopper className="w-20 h-20 text-muted-foreground opacity-50" />
+                            <p className="text-lg font-bold">{countdown}</p>
+                            <p className="text-sm text-muted-foreground">
+                                You've claimed your gift! Come back later.
+                            </p>
+                         </>
+                    ) : (
+                        <>
+                            <button onClick={handleClaimDailyGift} className="disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+                                <Gift className="w-20 h-20 text-primary" />
+                            </button>
+                            <p className="text-sm text-muted-foreground">
+                                Click the gift to get {DAILY_GIFT_AMOUNT} coins!
+                            </p>
+                        </>
+                    )}
+
+                </CardContent>
+            </Card>
+        )}
       </main>
     </div>
   );
 }
+
