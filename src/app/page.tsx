@@ -172,7 +172,7 @@ export default function Home() {
                   </Card>
                   <div className="flex gap-4 pt-3">
                     <div className="flex-shrink-0 relative">
-                       <Image src={video.thumbnail} alt={video.channel} width={40} height={40} className="rounded-full object-cover" data-ai-hint="person avatar" />
+                       <Image src={video.thumbnail} alt={video.channel} width={48} height={48} className="rounded-full object-cover" data-ai-hint="person avatar" />
                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-background"></div>
                     </div>
                     <div className="flex flex-col">
@@ -235,5 +235,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

@@ -11,8 +11,7 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-
-const ADMIN_USERNAME = 'Zala kb 101';
+import type { DatabaseUser } from '@/lib/auth';
 
 type SubmittedVideo = {
     id: number;
@@ -23,71 +22,87 @@ type SubmittedVideo = {
 };
 
 type UserData = {
+    id: string;
     name: string;
     coins: number;
+    isAdmin: boolean;
 };
 
-// Mock server actions - replace with actual API calls to your DB
+// Admin specific data fetching
 async function getAdminData() {
-    // In a real app, you would fetch this from your server
-    const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
-    
-    const users: UserData[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('user_') && key.substring(5).toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
-            const userName = key.substring(5);
-            const userCoins = localStorage.getItem(`userCoins_${userName}`);
-            users.push({
-                name: userName,
-                coins: userCoins ? parseInt(userCoins, 10) : 0,
-            });
-        }
+    const response = await fetch('/api/admin/data');
+    if (!response.ok) {
+        throw new Error('Failed to fetch admin data');
     }
-    return { videos, users };
+    return response.json();
 }
 
 async function updateVideoStatus(videoId: number, status: 'approved' | 'rejected') {
-     const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
-     const updatedVideos = videos.map((v: SubmittedVideo) => v.id === videoId ? { ...v, status } : v);
-     localStorage.setItem('submittedVideos', JSON.stringify(updatedVideos));
-     return updatedVideos;
+    const response = await fetch('/api/admin/update-video-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, status }),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to update video status');
+    }
+    return response.json();
+}
+
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/user', { cache: 'no-store' });
+        if(response.status === 204) return null;
+        if(response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
 }
 
 
 export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
+    const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
     const [submittedVideos, setSubmittedVideos] = useState<SubmittedVideo[]>([]);
     const [allUsers, setAllUsers] = useState<UserData[]>([]);
-    const [isAuthorized, setIsAuthorized] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
-        const loggedInUser = localStorage.getItem('currentUser');
-        if (loggedInUser) {
-            const user = JSON.parse(loggedInUser);
-            setCurrentUser(user);
-            if (user.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-                setIsAuthorized(true);
+        const checkAuthAndFetchData = async () => {
+            const user = await getCurrentUser();
+             if (user && user.isAdmin) {
+                setCurrentUser(user);
                 fetchAdminData();
+            } else {
+                setCurrentUser(null);
+                setIsLoading(false);
             }
-        }
-        setIsLoading(false);
+        };
+        checkAuthAndFetchData();
     }, []);
     
     const fetchAdminData = async () => {
         setIsLoading(true);
-        // This is where you would call your server to get data
-        const {videos, users} = await getAdminData();
-        setSubmittedVideos(videos);
-        setAllUsers(users);
-        setIsLoading(false);
+        try {
+            const { videos, users } = await getAdminData();
+            setSubmittedVideos(videos);
+            setAllUsers(users);
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not fetch admin data.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     const handleVideoStatusChange = async (videoId: number, newStatus: 'approved' | 'rejected') => {
-        // Optimistic update
         const originalVideos = submittedVideos;
         const updated = submittedVideos.map(video => 
             video.id === videoId ? { ...video, status: newStatus } : video
@@ -134,7 +149,7 @@ export default function AdminPage() {
         )
     }
 
-    if (!isAuthorized) {
+    if (!currentUser || !currentUser.isAdmin) {
         return (
             <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
@@ -185,8 +200,8 @@ export default function AdminPage() {
                                 <p className="text-center text-muted-foreground py-8">No other users found.</p>
                            ) : (
                                 <div className="divide-y divide-border rounded-lg border">
-                                {allUsers.map((user, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3">
+                                {allUsers.filter(u => !u.isAdmin).map((user) => (
+                                    <div key={user.id} className="flex items-center justify-between p-3">
                                         <span className="font-medium truncate">{user.name}</span>
                                         <div className="flex items-center gap-2">
                                             <Coins className="w-5 h-5 text-yellow-500" />

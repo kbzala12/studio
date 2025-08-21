@@ -15,6 +15,7 @@ async function initializeDatabase() {
       driver: sqlite3.Database
     });
 
+    await newDb.exec('PRAGMA foreign_keys = ON;');
     await newDb.exec('PRAGMA journal_mode = WAL;');
     
     await newDb.exec(`
@@ -38,10 +39,10 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS videos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         url TEXT NOT NULL,
-        submittedBy TEXT NOT NULL,
+        submittedByUserId TEXT NOT NULL,
         submittedAt TEXT NOT NULL,
         status TEXT DEFAULT 'pending' NOT NULL,
-        FOREIGN KEY (submittedBy) REFERENCES users(name)
+        FOREIGN KEY (submittedByUserId) REFERENCES users(id)
       );
     `);
      await newDb.exec(`
@@ -73,4 +74,3 @@ async function initializeDatabase() {
 export async function getDb() {
   return await initializeDatabase();
 }
-

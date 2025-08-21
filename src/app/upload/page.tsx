@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, AlertCircle, Coins, ArrowLeft, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { DatabaseUser } from '@/lib/auth';
 
 const UPLOAD_COST = 1250;
 
@@ -20,56 +21,51 @@ const formSchema = z.object({
   videoUrl: z.string().url({ message: "Please enter a valid YouTube URL." }).regex(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/, 'Must be a valid YouTube video URL.'),
 });
 
-// Mock server action
-async function submitVideo(videoUrl: string, userName: string) {
-    const userCoinsKey = `userCoins_${userName}`;
-    const currentCoins = parseInt(localStorage.getItem(userCoinsKey) || '0', 10);
-    if(currentCoins < UPLOAD_COST) {
-        throw new Error(`You need at least ${UPLOAD_COST} coins to upload a video.`);
-    }
-
-    const newTotalCoins = currentCoins - UPLOAD_COST;
-    localStorage.setItem(userCoinsKey, newTotalCoins.toString());
-
-    const submittedVideos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
-    submittedVideos.push({ 
-        url: videoUrl, 
-        submittedBy: userName, 
-        submittedAt: new Date().toISOString(), 
-        status: 'pending',
-        // In a real DB, this would be an auto-incrementing ID
-        id: Date.now() 
+async function submitVideo(videoUrl: string) {
+    const response = await fetch('/api/videos/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl }),
     });
-    localStorage.setItem('submittedVideos', JSON.stringify(submittedVideos));
-
-    // Update the coins in the currentUser object as well
-    const currentUserRaw = localStorage.getItem('currentUser');
-    if (currentUserRaw) {
-        const currentUser = JSON.parse(currentUserRaw);
-        currentUser.coins = newTotalCoins;
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message);
     }
+    return result;
+}
 
-    return { newTotalCoins };
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/user', { cache: 'no-store' });
+        if(response.status === 204) return null;
+        if(response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
 }
 
 
 export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{name: string, coins: number} | null>(null);
-  const [hasSufficientCoins, setHasSufficientCoins] = useState(false);
+  const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
 
   useEffect(() => {
-     const loggedInUser = localStorage.getItem('currentUser');
-     if (loggedInUser) {
-        const user = JSON.parse(loggedInUser);
+     async function fetchUser() {
+        const user = await getCurrentUser();
         setCurrentUser(user);
-        setHasSufficientCoins(user.coins >= UPLOAD_COST);
+        setIsCheckingUser(false);
      }
+     fetchUser();
   }, []);
+
+  const hasSufficientCoins = currentUser ? currentUser.coins >= UPLOAD_COST : false;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -101,17 +97,16 @@ export default function UploadPage() {
     setIsLoading(true);
 
     try {
-      const { newTotalCoins } = await submitVideo(values.videoUrl, currentUser.name);
+      const { newTotalCoins } = await submitVideo(values.videoUrl);
 
-      // Optimistically update state
       setCurrentUser(prev => prev ? { ...prev, coins: newTotalCoins } : null);
-      setHasSufficientCoins(newTotalCoins >= UPLOAD_COST);
 
       toast({
         title: "Video Submitted!",
         description: "Your video is now pending approval. This may take up to 24 hours.",
       });
       form.reset();
+      router.refresh(); // Refresh to show updated coin count in header if needed elsewhere
 
     } catch (error: any) {
         toast({
@@ -122,6 +117,14 @@ export default function UploadPage() {
     } finally {
       setIsLoading(false);
     }
+  }
+  
+  if (isCheckingUser) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
