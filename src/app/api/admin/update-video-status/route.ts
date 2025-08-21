@@ -2,6 +2,7 @@
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { validateRequest } from '@/lib/auth';
 
 const updateStatusSchema = z.object({
   videoId: z.number(),
@@ -10,6 +11,11 @@ const updateStatusSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const { user } = await validateRequest();
+    if (!user || !user.isAdmin) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+      
     const body = await request.json();
     const { videoId, status } = updateStatusSchema.parse(body);
 

@@ -2,6 +2,7 @@
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { validateRequest } from '@/lib/auth';
 
 const submitVideoSchema = z.object({
   videoUrl: z.string().url(),
@@ -9,6 +10,11 @@ const submitVideoSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const { user } = await validateRequest();
+    if (!user) {
+        return NextResponse.json({ message: "Login required" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { videoUrl } = submitVideoSchema.parse(body);
 
@@ -17,7 +23,7 @@ export async function POST(request: Request) {
     await db.run(
         'INSERT INTO videos (url, submittedByUserId, submittedAt, status) VALUES (?, ?, ?, ?)',
         videoUrl,
-        'anonymous', // No user system
+        user.id,
         new Date().toISOString(),
         'pending'
     );

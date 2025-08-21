@@ -24,6 +24,9 @@ type SubmittedVideo = {
 async function getAdminData() {
     const response = await fetch('/api/admin/data');
     if (!response.ok) {
+        if (response.status === 401) {
+            throw new Error('Unauthorized');
+        }
         throw new Error('Failed to fetch admin data');
     }
     return response.json();
@@ -56,12 +59,21 @@ export default function AdminPage() {
         try {
             const { videos } = await getAdminData();
             setSubmittedVideos(videos);
-        } catch (error) {
-             toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not fetch admin data.'
-            });
+        } catch (error: any) {
+             if (error.message === 'Unauthorized') {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Access Denied',
+                    description: 'You must be an admin to view this page.'
+                 });
+                 router.push('/profile');
+             } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'Could not fetch admin data.'
+                });
+             }
         } finally {
             setIsLoading(false);
         }
@@ -154,7 +166,7 @@ export default function AdminPage() {
                                                 <div className="flex-grow text-center md:text-left">
                                                     <a href={video.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline break-all">{video.url}</a>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Submitted on {new Date(video.submittedAt).toLocaleDateString()}
+                                                        Submitted by {video.submittedBy} on {new Date(video.submittedAt).toLocaleDateString()}
                                                     </p>
                                                      <Badge 
                                                         variant={video.status === 'approved' ? 'default' : video.status === 'rejected' ? 'destructive' : 'secondary'}

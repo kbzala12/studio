@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ async function submitVideo(videoUrl: string) {
     });
     const result = await response.json();
     if (!response.ok) {
-        throw new Error(result.message);
+        throw new Error(result.message || 'Submission failed');
     }
     return result;
 }
@@ -33,6 +34,22 @@ async function submitVideo(videoUrl: string) {
 export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    async function checkLogin() {
+        const res = await fetch('/api/sessions');
+        if (!res.ok) {
+            toast({
+                variant: "destructive",
+                title: "Login Required",
+                description: "You must be logged in to submit a video.",
+            });
+            router.push('/profile');
+        }
+    }
+    checkLogin();
+  }, [router, toast]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

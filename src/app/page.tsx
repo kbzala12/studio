@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, Upload, UserPlus } from 'lucide-react';
+import { Flame, Video, Upload, UserPlus, LogIn } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -56,6 +56,12 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
+        <Link href="/profile">
+            <Button variant="outline">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+            </Button>
+        </Link>
       </header>
       
       <main className="flex-grow p-4 pb-24 md:p-6">
