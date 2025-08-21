@@ -15,8 +15,10 @@ async function initializeDatabase(): Promise<Database> {
     const dbPath = path.join(process.cwd(), 'database.db');
     console.log(`Initializing database at: ${dbPath}`);
     
-    sqliteInstance = new DatabaseConstructor(dbPath);
-    sqliteInstance.pragma('journal_mode = WAL');
+    if (!sqliteInstance) {
+      sqliteInstance = new DatabaseConstructor(dbPath);
+      sqliteInstance.pragma('journal_mode = WAL');
+    }
 
     const db = await open({
       filename: dbPath,
@@ -45,18 +47,17 @@ async function initializeDatabase(): Promise<Database> {
         FOREIGN KEY (user_id) REFERENCES users(id)
       );
     `);
-
-    // Add admin user if it doesn't exist
-    const adminUser = await db.get('SELECT * FROM users WHERE name = ?', 'admin');
-    if (!adminUser) {
-        await db.run('INSERT INTO users (id, name, password, isAdmin) VALUES (?, ?, ?, ?)',
-            'admin_id', // simple static id for admin
-            'admin',
-            'admin', // You should change this password
-            true
+    
+    await db.exec(`
+        CREATE TABLE IF NOT EXISTS videos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT NOT NULL,
+            submittedByUserId TEXT NOT NULL,
+            submittedAt TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+            FOREIGN KEY (submittedByUserId) REFERENCES users(id)
         );
-        console.log("Admin user created.");
-    }
+    `);
     
     console.log("Database initialized successfully.");
     return db;
@@ -69,12 +70,9 @@ export async function getDb(): Promise<Database> {
   return dbInstance;
 }
 
-export function getSqliteInstance() {
+export async function getSqliteInstance(): Promise<import('better-sqlite3').Database> {
     if (!sqliteInstance) {
-        // This will be initialized by getDb, but as a fallback
-        const dbPath = path.join(process.cwd(), 'database.db');
-        sqliteInstance = new DatabaseConstructor(dbPath);
-        sqliteInstance.pragma('journal_mode = WAL');
+        await getDb();
     }
-    return sqliteInstance;
+    return sqliteInstance!;
 }
