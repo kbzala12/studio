@@ -169,7 +169,7 @@ export default function Home() {
                     </div>
                     <div className="flex flex-col">
                       <h3 className="text-base font-semibold leading-tight">{video.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{video.channel}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Subscribe to channel</p>
                       <p className="text-sm text-muted-foreground">
                         {video.views} &bull; {video.uploaded}
                       </p>
