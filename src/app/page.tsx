@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-react';
 import Image from 'next/image';
@@ -110,6 +110,24 @@ export default function Home() {
       
       <main className="flex-grow p-4 pb-24 md:p-6">
         
+        {currentUser && (
+            <Card className="mb-6 shadow-lg">
+                <CardHeader>
+                    <CardTitle>My Wallet</CardTitle>
+                    <CardDescription>Your current coin balance.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Coins className="w-10 h-10 text-yellow-500" />
+                        <span className="text-3xl font-bold">{currentUser.coins}</span>
+                    </div>
+                    <Link href="/profile" passHref>
+                        <Button variant="outline">View Profile</Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        )}
+
         <section className="mb-10">
            <div className="flex items-center gap-2 mb-4">
             <Flame className="w-6 h-6 text-red-500" />
