@@ -6,9 +6,9 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 
 // Singleton-style database connection
-let dbInstance: Database | null = null;
+let dbInstance: Promise<Database> | null = null;
 
-async function initializeDatabase() {
+async function initializeDatabase(): Promise<Database> {
     const dbPath = path.join(process.cwd(), 'database.db');
     const db = await open({
       filename: dbPath,
@@ -69,9 +69,9 @@ async function initializeDatabase() {
     return db;
 }
 
-export async function getDb() {
+export async function getDb(): Promise<Database> {
   if (!dbInstance) {
-    dbInstance = await initializeDatabase();
+    dbInstance = initializeDatabase();
   }
   return dbInstance;
 }

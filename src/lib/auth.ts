@@ -5,6 +5,7 @@ import { cache } from 'react';
 import type { Session, User } from 'lucia';
 import { getDb } from './db';
 import { BetterSqlite3Adapter } from '@lucia-auth/adapter-sqlite';
+import type { Database } from 'sqlite';
 
 export interface DatabaseUser {
 	id: string; // Changed to string to match Lucia's expectations
@@ -14,13 +15,19 @@ export interface DatabaseUser {
     password?: string;
 }
 
-const db = await getDb();
-const adapter = new BetterSqlite3Adapter(db, {
-    user: 'users',
-    session: 'sessions'
+const dbPromise: Promise<Database> = getDb();
+
+const adapterPromise = dbPromise.then(db => {
+    // Better-sqlite3 adapter expects the raw driver instance, not the `sqlite` wrapper
+    const rawDb = (db.driver as any).db;
+    return new BetterSqlite3Adapter(rawDb, {
+        user: 'users',
+        session: 'sessions'
+    });
 });
 
-export const lucia = new Lucia(adapter, {
+
+export const lucia = new Lucia(await adapterPromise, {
 	sessionCookie: {
 		attributes: {
 			secure: process.env.NODE_ENV === 'production'
