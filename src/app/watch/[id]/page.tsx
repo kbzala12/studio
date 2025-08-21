@@ -11,6 +11,7 @@ import {useToast} from '@/hooks/use-toast';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const REWARD_AMOUNT = 30;
 const DAILY_COIN_LIMIT = 650;
@@ -339,7 +340,7 @@ export default function WatchPage() {
                         <p className="text-4xl font-bold flex items-center justify-center gap-2">
                            {REWARD_AMOUNT} <Coins className="w-8 h-8 text-yellow-500" />
                         </p>
-                         <Progress value={progress} className="h-4" />
+                         <Progress value={progress} className="h-4 [&>div]:bg-red-500" />
                         <p className="text-sm text-muted-foreground">
                             {formatTime(timeWatched)} / {formatTime(REWARD_DURATION_SECONDS)}
                         </p>
