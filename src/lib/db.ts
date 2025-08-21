@@ -4,8 +4,6 @@
 import { open, Database } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import path from 'path';
-import { Lucia } from 'lucia';
-import { BetterSqlite3Adapter } from '@lucia-auth/adapter-sqlite';
 import DatabaseConstructor from 'better-sqlite3';
 
 let dbInstance: Database | null = null;
