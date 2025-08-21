@@ -169,8 +169,9 @@ export default function Home() {
                     </CardContent>
                   </Card>
                   <div className="flex gap-4 pt-3">
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 relative">
                        <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-background"></div>
                     </div>
                     <div className="flex flex-col">
                       <h3 className="text-base font-semibold leading-tight">{video.title}</h3>
