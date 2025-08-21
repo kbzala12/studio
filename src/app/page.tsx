@@ -212,7 +212,7 @@ export default function Home() {
               </AlertDialogContent>
             </AlertDialog>
             
-            {currentUser?.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && (
+            {currentUser && currentUser.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && (
                  <Link href="/admin" passHref>
                     <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                         <Shield className="w-6 h-6" />
