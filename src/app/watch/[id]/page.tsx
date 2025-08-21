@@ -1,7 +1,7 @@
 
 'use client';
 
-import {Coins, Timer, CheckCircle, Youtube} from 'lucide-react';
+import {Coins, Timer, CheckCircle, Youtube, Gift, PartyPopper} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo, useRef} from 'react';
 import {Button} from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 
 const REWARD_AMOUNT = 30;
 const DAILY_COIN_LIMIT = 650;
+const DAILY_GIFT_AMOUNT = 10;
 
 // YouTube Player states
 const YT_PLAYER_STATE = {
@@ -45,6 +46,7 @@ export default function WatchPage() {
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
   const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
+  const [dailyGiftClaimed, setDailyGiftClaimed] = useState(false);
   const [isTimerPaused, setIsTimerPaused] = useState(true);
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
@@ -86,6 +88,18 @@ export default function WatchPage() {
         localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today, amount: 0 }));
         setDailyCoinsEarned(0);
     }
+    
+    const giftData = localStorage.getItem(`dailyGiftData_${username}`);
+    if(giftData) {
+        const giftDate = JSON.parse(giftData).date;
+        const today = new Date().toISOString().split('T')[0];
+        if (giftDate === today) {
+            setDailyGiftClaimed(true);
+        } else {
+            setDailyGiftClaimed(false);
+        }
+    }
+
 
     const lastClaimed = localStorage.getItem(`videoClaim_${username}_${videoId}`);
     if (lastClaimed) {
@@ -195,6 +209,24 @@ export default function WatchPage() {
       }
     };
   }, [toast, dismiss]);
+  
+  const handleClaimDailyGift = () => {
+    if (!currentUser || !isLoggedIn || dailyGiftClaimed) return;
+
+    const newTotalCoins = coins + DAILY_GIFT_AMOUNT;
+    setCoins(newTotalCoins);
+    localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
+    
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(`dailyGiftData_${currentUser.name}`, JSON.stringify({ date: today }));
+    setDailyGiftClaimed(true);
+
+    toast({
+        title: "Daily Gift Claimed!",
+        description: `You've earned ${DAILY_GIFT_AMOUNT} coins.`,
+        action: <CheckCircle className="text-green-500" />
+    });
+  }
 
   const handleClaimReward = () => {
     if (!currentUser || !isLoggedIn) return;
@@ -264,7 +296,7 @@ export default function WatchPage() {
       </header>
 
       <main className="flex-grow container mx-auto p-4 md:p-6 flex flex-col gap-6">
-        <div className="w-full">
+        <div className="grid md:grid-cols-2 gap-6">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Rewards</CardTitle>
@@ -293,6 +325,26 @@ export default function WatchPage() {
                     </Button>
                 </CardContent>
              </Card>
+            {isLoggedIn && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Daily Gift</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center justify-center text-center p-8 space-y-4">
+                        <p className="text-lg">YT kb bot</p>
+                        <button onClick={handleClaimDailyGift} disabled={dailyGiftClaimed} className="disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+                        {dailyGiftClaimed ? (
+                            <PartyPopper className="w-20 h-20 text-primary" />
+                        ) : (
+                            <Gift className="w-20 h-20 text-primary" />
+                        )}
+                        </button>
+                        <p className="text-sm text-muted-foreground">
+                            {dailyGiftClaimed ? "You've claimed your gift for today!" : `Click the gift to get ${DAILY_GIFT_AMOUNT} coins!`}
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
         </div>
         <div>
             <Card className="overflow-hidden">
