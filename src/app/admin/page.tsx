@@ -6,12 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Shield, CheckCircle, XCircle, Users, Coins, KeyRound } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import type { DatabaseUser } from '@/lib/auth';
 
 type SubmittedVideo = {
     id: number;
@@ -19,14 +18,6 @@ type SubmittedVideo = {
     submittedBy: string;
     submittedAt: string;
     status: 'pending' | 'approved' | 'rejected';
-};
-
-type UserData = {
-    id: string;
-    name: string;
-    coins: number;
-    isAdmin: boolean;
-    password?: string;
 };
 
 // Admin specific data fetching
@@ -50,48 +41,21 @@ async function updateVideoStatus(videoId: number, status: 'approved' | 'rejected
     return response.json();
 }
 
-async function getCurrentUser() {
-    try {
-        const response = await fetch('/api/user', { cache: 'no-store' });
-        if(response.status === 204) return null;
-        if(response.ok) {
-            return await response.json();
-        }
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
-
-
 export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
     const [submittedVideos, setSubmittedVideos] = useState<SubmittedVideo[]>([]);
-    const [allUsers, setAllUsers] = useState<UserData[]>([]);
     const { toast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
-        const checkAuthAndFetchData = async () => {
-            const user = await getCurrentUser();
-             if (user && user.isAdmin) {
-                setCurrentUser(user);
-                fetchAdminData();
-            } else {
-                setCurrentUser(null);
-                setIsLoading(false);
-            }
-        };
-        checkAuthAndFetchData();
+        fetchAdminData();
     }, []);
     
     const fetchAdminData = async () => {
         setIsLoading(true);
         try {
-            const { videos, users } = await getAdminData();
+            const { videos } = await getAdminData();
             setSubmittedVideos(videos);
-            setAllUsers(users);
         } catch (error) {
              toast({
                 variant: 'destructive',
@@ -150,32 +114,6 @@ export default function AdminPage() {
         )
     }
 
-    if (!currentUser || !currentUser.isAdmin) {
-        return (
-            <div className="flex flex-col min-h-screen bg-background text-foreground">
-                <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
-                     <div className="flex items-center gap-4">
-                        <Link href="/" passHref>
-                            <Button variant="ghost" size="icon">
-                                <ArrowLeft />
-                            </Button>
-                        </Link>
-                        <h1 className="text-xl font-bold">Admin Panel</h1>
-                    </div>
-                </header>
-                <main className="flex-grow flex items-center justify-center p-4 text-center">
-                    <Card className="w-full max-w-md p-8">
-                        <Shield className="w-16 h-16 mx-auto text-destructive" />
-                        <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
-                        <p className="text-muted-foreground">You do not have permission to view this page.</p>
-                        <Button className="mt-6" onClick={() => router.push('/')}>Go to Homepage</Button>
-                    </Card>
-                </main>
-            </div>
-        );
-    }
-
-
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
@@ -187,39 +125,8 @@ export default function AdminPage() {
                     </Link>
                     <h1 className="text-xl font-bold">Admin Panel</h1>
                 </div>
-                <Badge variant="secondary">Welcome, {currentUser?.name}</Badge>
             </header>
             <main className="flex-grow p-4 md:p-6 space-y-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Users /> All Users</CardTitle>
-                        <CardDescription>View all registered users, their passwords, and coin balances.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                           {allUsers.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-8">No other users found.</p>
-                           ) : (
-                                <div className="divide-y divide-border rounded-lg border">
-                                {allUsers.filter(u => !u.isAdmin).map((user) => (
-                                    <div key={user.id} className="grid grid-cols-3 items-center p-3 gap-2">
-                                        <span className="font-medium truncate col-span-1">{user.name}</span>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground col-span-1">
-                                            <KeyRound className="w-4 h-4" />
-                                            <span>{user.password}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 justify-end col-span-1">
-                                            <Coins className="w-5 h-5 text-yellow-500" />
-                                            <span className="font-semibold">{user.coins}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                                </div>
-                           )}
-                        </div>
-                    </CardContent>
-                </Card>
-
                 <Card>
                     <CardHeader>
                         <CardTitle>Submitted Videos</CardTitle>
@@ -247,7 +154,7 @@ export default function AdminPage() {
                                                 <div className="flex-grow text-center md:text-left">
                                                     <a href={video.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline break-all">{video.url}</a>
                                                     <p className="text-sm text-muted-foreground">
-                                                        Submitted by: <span className="font-medium">{video.submittedBy}</span> on {new Date(video.submittedAt).toLocaleDateString()}
+                                                        Submitted on {new Date(video.submittedAt).toLocaleDateString()}
                                                     </p>
                                                      <Badge 
                                                         variant={video.status === 'approved' ? 'default' : video.status === 'rejected' ? 'destructive' : 'secondary'}

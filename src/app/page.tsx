@@ -1,41 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-react';
+import { Flame, Video, Upload, UserPlus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import type { DatabaseUser } from '@/lib/auth';
-
-
-async function getCurrentUser() {
-    try {
-        const response = await fetch('/api/user', { cache: 'no-store' });
-        if(response.status === 204) return null;
-        if(response.ok) {
-            return await response.json();
-        }
-        return null;
-    } catch (e) {
-        return null;
-    }
-}
-
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
-
-  useEffect(() => {
-    async function checkUserStatus() {
-        const user = await getCurrentUser();
-        setCurrentUser(user);
-    }
-    checkUserStatus();
-  }, []);
 
   const videos = [
     {
@@ -83,51 +56,10 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
-        <div className="flex items-center gap-2">
-            <Link href="/profile" passHref>
-            <Button variant="ghost" className="flex items-center gap-2">
-                {currentUser ? (
-                <>
-                    <User className="w-6 h-6" />
-                    <div className="flex-col items-start hidden sm:flex">
-                        <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
-                        <div className="flex items-center gap-1">
-                        <Coins className="w-3 h-3 text-yellow-400" />
-                        <span className="text-xs">{currentUser.coins}</span>
-                        </div>
-                    </div>
-                </>
-                ) : (
-                <>
-                    <User className="w-6 h-6" />
-                    <span className="text-sm hidden sm:inline">Profile</span>
-                </>
-                )}
-            </Button>
-            </Link>
-        </div>
       </header>
       
       <main className="flex-grow p-4 pb-24 md:p-6">
         
-        {currentUser && (
-            <Card className="mb-6 shadow-lg">
-                <CardHeader>
-                    <CardTitle>My Wallet</CardTitle>
-                    <CardDescription>Your current coin balance.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Coins className="w-10 h-10 text-yellow-500" />
-                        <span className="text-3xl font-bold">{currentUser.coins}</span>
-                    </div>
-                    <Link href="/profile" passHref>
-                        <Button variant="outline">View Profile</Button>
-                    </Link>
-                </CardContent>
-            </Card>
-        )}
-
         <section className="mb-10">
            <div className="flex items-center gap-2 mb-4">
             <Flame className="w-6 h-6 text-red-500" />

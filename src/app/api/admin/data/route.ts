@@ -1,25 +1,20 @@
 
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { validateRequest } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const { user } = await validateRequest();
-    if (!user || !user.isAdmin) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     const db = await getDb();
 
+    // Simplified query without user join
     const videos = await db.all(`
-        SELECT v.id, v.url, u.name as submittedBy, v.submittedAt, v.status
-        FROM videos v
-        JOIN users u ON v.submittedByUserId = u.id
-        ORDER BY v.submittedAt DESC
+        SELECT id, url, submittedByUserId as submittedBy, submittedAt, status
+        FROM videos
+        ORDER BY submittedAt DESC
     `);
-
-    const users = await db.all('SELECT id, name, password, coins, isAdmin FROM users');
+    
+    // No users to fetch
+    const users: any[] = [];
 
     return NextResponse.json({ videos, users });
 

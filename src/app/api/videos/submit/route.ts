@@ -2,9 +2,6 @@
 import { getDb } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { validateRequest } from '@/lib/auth';
-
-const UPLOAD_COST = 1250;
 
 const submitVideoSchema = z.object({
   videoUrl: z.string().url(),
@@ -12,36 +9,20 @@ const submitVideoSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const { user } = await validateRequest();
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { videoUrl } = submitVideoSchema.parse(body);
 
     const db = await getDb();
     
-    // Check if user has enough coins
-    const currentUser = await db.get('SELECT * FROM users WHERE id = ?', user.id);
-    if (!currentUser || currentUser.coins < UPLOAD_COST) {
-        return NextResponse.json({ message: `You need at least ${UPLOAD_COST} coins to upload a video.` }, { status: 400 });
-    }
-
-    // Deduct coins
-    const newTotalCoins = currentUser.coins - UPLOAD_COST;
-    await db.run('UPDATE users SET coins = ? WHERE id = ?', newTotalCoins, user.id);
-    
-    // Add video to the database
     await db.run(
         'INSERT INTO videos (url, submittedByUserId, submittedAt, status) VALUES (?, ?, ?, ?)',
         videoUrl,
-        user.id,
+        'anonymous', // No user system
         new Date().toISOString(),
         'pending'
     );
 
-    return NextResponse.json({ message: 'Video submitted successfully', newTotalCoins });
+    return NextResponse.json({ message: 'Video submitted successfully' });
 
   } catch (error) {
     if (error instanceof z.ZodError) {
