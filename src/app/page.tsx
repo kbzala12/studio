@@ -1,14 +1,40 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, Upload, UserPlus, LogIn } from 'lucide-react';
+import { Flame, Video, Upload, UserPlus, LogIn, Coins, User } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+type User = {
+  id: string;
+  name: string;
+  coins: number;
+  isAdmin: boolean;
+};
+
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/sessions');
+        if (res.ok) {
+          const { user } = await res.json();
+          setUser(user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        setUser(null);
+      }
+    }
+    checkSession();
+  }, []);
 
   const videos = [
     {
@@ -57,15 +83,41 @@ export default function Home() {
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
         <Link href="/profile">
-            <Button variant="outline">
-                <LogIn className="mr-2 h-4 w-4" />
-                Login
-            </Button>
+           {user ? (
+              <Button variant="outline">
+                <User className="mr-2 h-4 w-4" />
+                {user.name}
+              </Button>
+            ) : (
+              <Button variant="outline">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+              </Button>
+            )}
         </Link>
       </header>
       
       <main className="flex-grow p-4 pb-24 md:p-6">
         
+        {user && (
+          <section className="mb-8">
+            <Card className="shadow-lg bg-gradient-to-r from-primary to-accent text-primary-foreground">
+              <CardHeader>
+                <CardTitle className="text-lg">My Wallet</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Coins className="w-10 h-10" />
+                  <span className="text-4xl font-bold">{user.coins}</span>
+                </div>
+                <Link href="/profile" passHref>
+                  <Button variant="secondary">View Profile</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
         <section className="mb-10">
            <div className="flex items-center gap-2 mb-4">
             <Flame className="w-6 h-6 text-red-500" />
@@ -191,3 +243,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
