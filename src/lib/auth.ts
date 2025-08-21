@@ -11,29 +11,26 @@ export interface DatabaseUser {
 	id: string; 
 	name: string;
 	coins: number;
-    isAdmin: boolean;
-    password?: string;
-    telegramId?: string | null;
+  isAdmin: boolean;
+  password?: string;
+  telegramId?: string | null;
 }
 
-const dbPromise: Promise<Database> = getDb();
-
-const adapterPromise = dbPromise.then(db => {
-    // Better-sqlite3 adapter expects the raw driver instance, not the `sqlite` wrapper
-    const rawDb = (db.driver as any).db;
-    if (!rawDb) {
-        throw new Error("Could not get the raw better-sqlite3 instance.");
-    }
-    return new BetterSqlite3Adapter(rawDb, {
-        user: 'users',
-        session: 'sessions'
-    });
+// This is a bit of a hack to get the raw driver instance for the adapter.
+// The adapter needs the raw `better-sqlite3` database object, not the `sqlite` wrapper.
+const adapter = new BetterSqlite3Adapter((await getDb()).driver, {
+    user: 'users',
+    session: 'sessions'
 });
 
 
-export const lucia = new Lucia(await adapterPromise, {
+export const lucia = new Lucia(adapter, {
 	sessionCookie: {
+		// this sets cookies with super long expiration
+		// since Next.js doesn't allow Lucia to extend cookie expiration when rendering pages
+		expires: false,
 		attributes: {
+			// set to `true` when using HTTPS
 			secure: process.env.NODE_ENV === 'production'
 		}
 	},
@@ -41,7 +38,8 @@ export const lucia = new Lucia(await adapterPromise, {
 		return {
 			name: attributes.name,
 			coins: attributes.coins,
-            isAdmin: attributes.isAdmin
+      isAdmin: attributes.isAdmin,
+      telegramId: attributes.telegramId,
 		};
 	}
 });
@@ -57,6 +55,7 @@ export const validateRequest = cache(
 		}
 
 		const result = await lucia.validateSession(sessionId);
+		// next.js throws when you attempt to set cookie when rendering page
 		try {
 			if (result.session && result.session.fresh) {
 				const sessionCookie = lucia.createSessionCookie(result.session.id);
@@ -75,7 +74,6 @@ export const validateRequest = cache(
 declare module 'lucia' {
 	interface Register {
 		Lucia: typeof lucia;
-        DatabaseUserAttributes: Omit<DatabaseUser, "id" | "password">;
-        UserId: string;
+    DatabaseUserAttributes: Omit<DatabaseUser, "id" | "password">;
 	}
 }

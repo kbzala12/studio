@@ -14,7 +14,13 @@ const loginSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, password } = loginSchema.parse(body);
+    const parsedBody = loginSchema.safeParse(body);
+    
+    if(!parsedBody.success) {
+        return NextResponse.json({ message: parsedBody.error.errors[0].message }, { status: 400 });
+    }
+
+    const { name, password } = parsedBody.data;
 
     const db = await getDb();
     const existingUser = await db.get<DatabaseUser>(
@@ -29,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
     
-    // In a real app, you MUST hash passwords. For this demo, we're using plain text.
+    // Plain text password comparison as per app's original design
     const validPassword = password === existingUser.password;
     if (!validPassword) {
       return NextResponse.json(
@@ -45,10 +51,7 @@ export async function POST(request: Request) {
     const { password: _, ...user } = existingUser;
     return NextResponse.json({ message: 'Logged in successfully', user });
 
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: error.errors[0].message }, { status: 400 });
-    }
+  } catch (error: any) {
     console.error("Login Error:", error);
     return NextResponse.json({ message: 'An error occurred during login' }, { status: 500 });
   }

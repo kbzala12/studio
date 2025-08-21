@@ -16,7 +16,13 @@ const ADMIN_USERNAME = 'Zala kb 101';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, password } = signupSchema.parse(body);
+    const parsedBody = signupSchema.safeParse(body);
+    
+    if(!parsedBody.success) {
+        return NextResponse.json({ message: parsedBody.error.errors[0].message }, { status: 400 });
+    }
+
+    const { name, password } = parsedBody.data;
 
     const db = await getDb();
 
@@ -25,21 +31,20 @@ export async function POST(request: Request) {
          return NextResponse.json({ message: 'This name is reserved.' }, { status: 400 });
     }
 
-    const existingUser = await db.get('SELECT * FROM users WHERE name = ?', name);
+    const existingUser = await db.get('SELECT id FROM users WHERE name = ?', name);
     if (existingUser) {
       return NextResponse.json({ message: 'This name is already in use.' }, { status: 400 });
     }
     
     const userId = randomBytes(16).toString('hex');
 
-    // In a real app, you MUST hash passwords. For this demo, we're using plain text for simplicity.
     await db.run(
       'INSERT INTO users (id, name, password, coins, isAdmin) VALUES (?, ?, ?, ?, ?)',
       userId,
       name,
-      password,
-      0, // Set initial coins to 0
-      false // Set isAdmin to false
+      password, // Storing password in plain text as per app's original design
+      0,
+      false
     );
 
     const session = await lucia.createSession(userId, {});
@@ -49,11 +54,10 @@ export async function POST(request: Request) {
     const newUser = await db.get('SELECT id, name, coins, isAdmin FROM users WHERE id = ?', userId);
 
     return NextResponse.json({ message: 'User created successfully', user: newUser }, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: error.errors[0].message }, { status: 400 });
-    }
+  
+  } catch (error: any) {
     console.error('Signup Error:', error);
-    return NextResponse.json({ message: 'An error occurred during signup' }, { status: 500 });
+    // Generic error for unexpected issues
+    return NextResponse.json({ message: 'An error occurred during signup.' }, { status: 500 });
   }
 }

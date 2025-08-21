@@ -10,6 +10,8 @@ let dbInstance: Promise<Database> | null = null;
 
 async function initializeDatabase(): Promise<Database> {
     const dbPath = path.join(process.cwd(), 'database.db');
+    console.log(`Initializing database at: ${dbPath}`);
+    
     const db = await open({
       filename: dbPath,
       driver: sqlite3.Database
@@ -18,6 +20,7 @@ async function initializeDatabase(): Promise<Database> {
     await db.exec('PRAGMA foreign_keys = ON;');
     await db.exec('PRAGMA journal_mode = WAL;');
     
+    console.log("Running migrations...");
     await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -33,7 +36,7 @@ async function initializeDatabase(): Promise<Database> {
         id TEXT PRIMARY KEY,
         expires_at INTEGER NOT NULL,
         user_id TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
     await db.exec(`
@@ -43,7 +46,7 @@ async function initializeDatabase(): Promise<Database> {
         submittedByUserId TEXT NOT NULL,
         submittedAt TEXT NOT NULL,
         status TEXT DEFAULT 'pending' NOT NULL,
-        FOREIGN KEY (submittedByUserId) REFERENCES users(id)
+        FOREIGN KEY (submittedByUserId) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
      await db.exec(`
@@ -54,7 +57,7 @@ async function initializeDatabase(): Promise<Database> {
           entityId TEXT, -- videoId for video reward, channel for subscribe
           claimedAt TEXT NOT NULL,
           amount INTEGER NOT NULL,
-          FOREIGN KEY (userId) REFERENCES users(id)
+          FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
      await db.exec(`
@@ -63,13 +66,14 @@ async function initializeDatabase(): Promise<Database> {
           userId TEXT NOT NULL,
           channelId TEXT NOT NULL,
           UNIQUE(userId, channelId),
-          FOREIGN KEY (userId) REFERENCES users(id)
+          FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
 
     // Add telegramId column if it doesn't exist (for backward compatibility)
     try {
         await db.exec('ALTER TABLE users ADD COLUMN telegramId TEXT UNIQUE');
+        console.log("Added telegramId column to users table.");
     } catch (e: any) {
         if (e.message.includes('duplicate column name')) {
             // Column already exists, ignore error
@@ -77,8 +81,23 @@ async function initializeDatabase(): Promise<Database> {
             throw e;
         }
     }
-
-
+    
+    // Create admin user if it doesn't exist
+    const adminUser = await db.get('SELECT * FROM users WHERE name = ?', 'Zala kb 101');
+    if (!adminUser) {
+        console.log("Creating admin user...");
+        await db.run(
+            'INSERT INTO users (id, name, password, coins, isAdmin, telegramId) VALUES (?, ?, ?, ?, ?, ?)',
+            'admin_user_id', // consistent ID for admin
+            'Zala kb 101',
+            'adminpassword', // A default password
+            9999,
+            true,
+            process.env.TELEGRAM_ADMIN_ID || null
+        );
+    }
+    
+    console.log("Database initialized successfully.");
     return db;
 }
 

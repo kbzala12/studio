@@ -14,11 +14,12 @@ import { Loader2, User, Coins, LogOut, ArrowLeft, Edit, Shield, Bot } from 'luci
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import type { DatabaseUser } from '@/lib/auth';
 
 const signupSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
@@ -28,16 +29,6 @@ const loginSchema = z.object({
     name: z.string().min(1, { message: "Name is required." }),
     password: z.string().min(1, { message: "Password is required." }),
 });
-
-type UserData = {
-    name: string;
-    coins: number;
-    isAdmin: boolean;
-};
-
-// Server actions will be in a separate file, e.g., 'app/actions/user.ts'
-// For now, we are mocking them here.
-const ADMIN_USERNAME = 'Zala kb 101';
 
 async function handleLoginRequest(values: z.infer<typeof loginSchema>) {
     const response = await fetch('/api/login', {
@@ -66,7 +57,11 @@ async function handleSignupRequest(values: z.infer<typeof signupSchema>) {
 }
 
 async function handleLogoutRequest() {
-    await fetch('/api/logout', { method: 'POST' });
+    const response = await fetch('/api/logout', { method: 'POST' });
+    if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message);
+    }
 }
 
 async function getCurrentUser() {
@@ -86,7 +81,7 @@ async function getCurrentUser() {
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+  const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
   const [isLoginView, setIsLoginView] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
@@ -117,32 +112,39 @@ export default function ProfilePage() {
 
 
   const handleLogout = async () => {
-    await handleLogoutRequest();
-    setCurrentUser(null);
-    toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-    });
-    router.push('/');
+    setIsLoading(true);
+    try {
+        await handleLogoutRequest();
+        setCurrentUser(null);
+        toast({
+            title: "Logged Out",
+            description: "You have been successfully logged out.",
+        });
+        router.refresh();
+    } catch (error: any) {
+         toast({ variant: "destructive", title: "Logout Failed", description: error.message });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   async function onSubmit(values: z.infer<typeof currentFormSchema>) {
     setIsLoading(true);
     try {
-        let userData;
+        let result;
         if (isLoginView) {
-            userData = await handleLoginRequest(values as z.infer<typeof loginSchema>);
+            result = await handleLoginRequest(values as z.infer<typeof loginSchema>);
             toast({ title: "Login Successful!" });
         } else {
-            userData = await handleSignupRequest(values as z.infer<typeof signupSchema>);
+            result = await handleSignupRequest(values as z.infer<typeof signupSchema>);
             toast({ title: "Account Created!", description: "You are now logged in." });
         }
-        setCurrentUser(userData.user);
+        setCurrentUser(result.user);
         form.reset();
         router.refresh();
 
     } catch (error: any) {
-        toast({ variant: "destructive", title: "Failed", description: error.message });
+        toast({ variant: "destructive", title: isLoginView ? "Login Failed" : "Signup Failed", description: error.message });
     } finally {
         setIsLoading(false);
     }
@@ -203,8 +205,9 @@ export default function ProfilePage() {
                 
                 <div className="w-full max-w-md">
                     <Separator className="my-4" />
-                    <Button variant="destructive" className="w-full" onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" /> Logout
+                    <Button variant="destructive" className="w-full" onClick={handleLogout} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />} 
+                        {isLoading ? 'Logging out...' : 'Logout'}
                     </Button>
                 </div>
             </main>
