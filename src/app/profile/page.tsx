@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Coins, LogOut, ArrowLeft, Edit, Shield } from 'lucide-react';
+import { Loader2, User, Coins, LogOut, ArrowLeft, Edit, Shield, Bot } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
@@ -286,6 +286,25 @@ export default function ProfilePage() {
                     </Button>
                 </form>
             </Form>
+
+            {isLoginView && (
+                <>
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                        </div>
+                    </div>
+
+                    <Button variant="outline" className="w-full text-lg py-6" onClick={() => window.open('https://t.me/Bingyt_bot', '_blank')}>
+                       <Bot className="mr-2 h-5 w-5" />
+                       Login with Telegram
+                    </Button>
+                </>
+            )}
+            
             <p className="text-center text-sm text-muted-foreground mt-6">
                 {isLoginView ? "Don't have an account?" : "Already have an account?"}
                 <Button variant="link" onClick={() => setIsLoginView(!isLoginView)}>
