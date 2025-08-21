@@ -118,7 +118,7 @@ export default function AdminPage() {
     if (!isAuthorized) {
         return (
             <div className="flex flex-col min-h-screen bg-background text-foreground">
-                <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+                <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
                      <div className="flex items-center gap-4">
                         <Link href="/" passHref>
                             <Button variant="ghost" size="icon">
@@ -128,7 +128,7 @@ export default function AdminPage() {
                         <h1 className="text-xl font-bold">Admin Panel</h1>
                     </div>
                 </header>
-                <main className="flex-grow flex items-center justify-center text-center">
+                <main className="flex-grow flex items-center justify-center p-4 text-center">
                     <Card className="p-8">
                         <Shield className="w-16 h-16 mx-auto text-destructive" />
                         <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
@@ -143,7 +143,7 @@ export default function AdminPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+            <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
                 <div className="flex items-center gap-4">
                     <Link href="/" passHref>
                         <Button variant="ghost" size="icon">
@@ -168,7 +168,7 @@ export default function AdminPage() {
                                 <div className="divide-y divide-border rounded-lg border">
                                 {allUsers.map((user, index) => (
                                     <div key={index} className="flex items-center justify-between p-3">
-                                        <span className="font-medium">{user.name}</span>
+                                        <span className="font-medium truncate">{user.name}</span>
                                         <div className="flex items-center gap-2">
                                             <Coins className="w-5 h-5 text-yellow-500" />
                                             <span className="font-semibold">{user.coins}</span>
@@ -203,10 +203,10 @@ export default function AdminPage() {
                                                     alt="Video thumbnail"
                                                     width={120}
                                                     height={90}
-                                                    className="rounded-md object-cover"
+                                                    className="rounded-md object-cover flex-shrink-0"
                                                 />
                                                 <div className="flex-grow text-center md:text-left">
-                                                    <a href={video.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline">{video.url}</a>
+                                                    <a href={video.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline break-all">{video.url}</a>
                                                     <p className="text-sm text-muted-foreground">
                                                         Submitted by: <span className="font-medium">{video.submittedBy}</span> on {new Date(video.submittedAt).toLocaleDateString()}
                                                     </p>
@@ -217,7 +217,7 @@ export default function AdminPage() {
                                                         {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
                                                     </Badge>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                                                     {video.status === 'pending' && (
                                                         <>
                                                             <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleVideoStatusChange(video.url, 'approved')}>

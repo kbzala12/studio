@@ -1,7 +1,7 @@
 
 'use client';
 
-import {Coins, Timer, CheckCircle, Youtube, Gift, PartyPopper} from 'lucide-react';
+import {Coins, Timer, CheckCircle, Youtube, Gift, PartyPopper, ArrowLeft} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo, useRef} from 'react';
 import {Button} from '@/components/ui/button';
@@ -154,6 +154,8 @@ export default function WatchPage() {
         playerVars: {
           autoplay: 1,
           controls: 1,
+          modestbranding: 1,
+          rel: 0,
         },
         events: {
           onReady: (event: any) => {
@@ -308,11 +310,11 @@ export default function WatchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
+       <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-4">
            <Link href="/" passHref>
              <Button variant="ghost" size="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                <ArrowLeft />
              </Button>
            </Link>
           <h1 className="text-xl font-bold">Watch & Earn</h1>
@@ -328,14 +330,14 @@ export default function WatchPage() {
       </header>
 
       <main className="flex-grow container mx-auto p-4 md:p-6 flex flex-col gap-6">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>Rewards</CardTitle>
                     <Timer className="w-6 h-6 text-primary"/>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center p-8 space-y-4">
+                    <div className="text-center p-4 md:p-8 space-y-4">
                         <p className="text-lg">Watch for {REWARD_DURATION_SECONDS / 60} minute{REWARD_DURATION_SECONDS / 60 > 1 ? 's' : ''} to earn</p>
                         <p className="text-4xl font-bold flex items-center justify-center gap-2">
                            {REWARD_AMOUNT} <Coins className="w-8 h-8 text-yellow-500" />
@@ -358,17 +360,15 @@ export default function WatchPage() {
                 </CardContent>
              </Card>
             
-             <div className="md:col-start-2 md:row-start-1"> {/* Placeholder for grid layout */}
+             <div className={cn("order-first lg:order-last", isShort && 'lg:row-span-2')}>
+                <Card className="overflow-hidden">
+                    <div className={cn(isShort ? "relative aspect-[9/16] max-h-[80vh] mx-auto max-w-sm" : "relative aspect-video", "bg-black")}>
+                        <div id="youtube-player"></div>
+                    </div>
+                </Card>
              </div>
-        </div>
-        
-        <div>
-            <Card className="overflow-hidden">
-                 <div className={isShort ? "relative aspect-[9/16] max-h-[70vh] mx-auto" : "relative aspect-video"}>
-                    <div id="youtube-player"></div>
-                </div>
-            </Card>
-            <Card className="mt-4">
+             
+             <Card className="lg:col-start-2">
                 <CardHeader>
                     <CardTitle>{videoTitle}</CardTitle>
                 </CardHeader>
@@ -384,7 +384,7 @@ export default function WatchPage() {
                             </p>
                         </div>
                     </div>
-                    <p className="mt-4 text-muted-foreground">
+                    <p className="mt-4 text-muted-foreground text-sm">
                         Rewards are only provided for watching here.
                     </p>
                 </CardContent>
@@ -392,7 +392,7 @@ export default function WatchPage() {
         </div>
 
         {isLoggedIn && (
-            <Card className="mt-6">
+            <Card>
                 <CardHeader>
                     <CardTitle>Daily Gift</CardTitle>
                 </CardHeader>
@@ -410,7 +410,7 @@ export default function WatchPage() {
                     ) : (
                         <>
                             <button onClick={handleClaimDailyGift} className="disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                <Gift className="w-20 h-20 text-primary" />
+                                <Gift className="w-20 h-20 text-primary transition-transform hover:scale-110" />
                             </button>
                             <p className="text-sm text-muted-foreground">
                                 Click the gift to get {DAILY_GIFT_AMOUNT} coins!
@@ -425,4 +425,3 @@ export default function WatchPage() {
     </div>
   );
 }
-

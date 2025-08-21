@@ -105,7 +105,7 @@ export default function UploadPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+        <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
             <div className="flex items-center gap-4">
             <Link href="/" passHref>
                 <Button variant="ghost" size="icon">
@@ -127,7 +127,7 @@ export default function UploadPage() {
             <div className="mx-auto bg-primary/10 p-4 rounded-full mb-4 inline-flex">
                 <Upload className="w-10 h-10 text-primary" />
             </div>
-            <CardTitle className="text-3xl font-bold font-headline">Promote Your Video</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl font-bold font-headline">Promote Your Video</CardTitle>
             <CardDescription className="text-md">
               Submit your YouTube video to be featured in the app.
               Cost: <span className="font-bold text-primary">{UPLOAD_COST} coins</span>.
@@ -135,7 +135,7 @@ export default function UploadPage() {
           </CardHeader>
           <CardContent>
             {!isLoggedIn ? (
-                 <div className="flex flex-col items-center justify-center text-center p-8 bg-muted rounded-lg">
+                 <div className="flex flex-col items-center justify-center text-center p-4 sm:p-8 bg-muted rounded-lg">
                     <User className="w-12 h-12 text-destructive mb-4" />
                     <h3 className="text-xl font-bold">Please Log In</h3>
                     <p className="text-muted-foreground mb-4">
@@ -144,7 +144,7 @@ export default function UploadPage() {
                     <Button onClick={() => router.push('/profile')}>Go to Login</Button>
                 </div>
             ) : !hasSufficientCoins ? (
-                <div className="flex flex-col items-center justify-center text-center p-8 bg-muted rounded-lg">
+                <div className="flex flex-col items-center justify-center text-center p-4 sm:p-8 bg-muted rounded-lg">
                     <AlertCircle className="w-12 h-12 text-destructive mb-4" />
                     <h3 className="text-xl font-bold text-destructive">Not Enough Coins</h3>
                     <p className="text-muted-foreground">
@@ -162,7 +162,7 @@ export default function UploadPage() {
                             <FormItem>
                             <FormLabel className="sr-only">YouTube Video URL</FormLabel>
                             <FormControl>
-                                <Input className="text-base" placeholder="https://youtube.com/watch?v=..." {...field} />
+                                <Input placeholder="https://youtube.com/watch?v=..." {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>

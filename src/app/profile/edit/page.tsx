@@ -167,7 +167,7 @@ export default function EditProfilePage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
-            <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
+            <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
                 <div className="flex items-center gap-4">
                 <Link href="/profile" passHref>
                     <Button variant="ghost" size="icon">
@@ -183,7 +183,7 @@ export default function EditProfilePage() {
                     <div className="mx-auto bg-primary/10 p-4 rounded-full mb-4 inline-flex">
                         <User className="w-10 h-10 text-primary" />
                     </div>
-                    <CardTitle className="text-3xl font-bold font-headline">Update Your Info</CardTitle>
+                    <CardTitle className="text-2xl md:text-3xl font-bold font-headline">Update Your Info</CardTitle>
                     <CardDescription className="text-md">
                         Change your name or password. Emojis are welcome! 😊
                     </CardDescription>

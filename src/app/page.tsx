@@ -75,7 +75,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 flex items-center justify-between px-6 py-3 border-b bg-background/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
@@ -86,7 +86,7 @@ export default function Home() {
                 {currentUser ? (
                 <>
                     <User className="w-6 h-6" />
-                    <div className="flex flex-col items-start">
+                    <div className="flex-col items-start hidden sm:flex">
                         <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
                         <div className="flex items-center gap-1">
                         <Coins className="w-3 h-3 text-yellow-400" />
@@ -97,7 +97,7 @@ export default function Home() {
                 ) : (
                 <>
                     <User className="w-6 h-6" />
-                    <span className="text-sm">Profile</span>
+                    <span className="text-sm hidden sm:inline">Profile</span>
                 </>
                 )}
             </Button>
@@ -105,7 +105,7 @@ export default function Home() {
         </div>
       </header>
       
-      <main className="flex-grow p-6 pb-24">
+      <main className="flex-grow p-4 pb-24 md:p-6">
         
         <section className="mb-10">
            <div className="flex items-center gap-2 mb-4">

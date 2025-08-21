@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent } from 'react';
@@ -87,7 +88,7 @@ export function ChatInterface({ repoUrl }: ChatInterfaceProps) {
   };
 
   return (
-    <Card className="w-full max-w-4xl h-[90vh] flex flex-col shadow-2xl bg-card/80 backdrop-blur-sm">
+    <Card className="w-full max-w-4xl h-[calc(100vh-4rem)] flex flex-col shadow-2xl bg-card/80 backdrop-blur-sm">
       <CardHeader className="border-b">
         <div className="flex items-center gap-4">
             <Code className="w-8 h-8 text-primary" />
@@ -98,7 +99,7 @@ export function ChatInterface({ repoUrl }: ChatInterfaceProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-grow p-0 flex flex-col">
-        <ScrollArea className="flex-grow p-6" ref={scrollAreaRef}>
+        <ScrollArea className="flex-grow p-4 md:p-6" ref={scrollAreaRef}>
           <div className="space-y-6">
             {messages.map((message) => (
               <div key={message.id} className={`flex items-start gap-4 ${message.role === 'user' ? 'justify-end' : ''}`}>
@@ -135,7 +136,7 @@ export function ChatInterface({ repoUrl }: ChatInterfaceProps) {
           </div>
         </ScrollArea>
         <div className="border-t p-4 bg-card/50">
-          <form onSubmit={handleSubmit} className="flex items-center gap-4">
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 md:gap-4">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}

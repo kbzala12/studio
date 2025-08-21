@@ -61,16 +61,16 @@ export function UrlInputForm({ onIngestionSuccess }: UrlInputFormProps) {
 
   return (
     <Card className="w-full max-w-lg shadow-2xl bg-card/80 backdrop-blur-sm">
-      <CardHeader className="text-center">
+      <CardHeader className="text-center p-4 md:p-6">
         <div className="mx-auto bg-primary/10 p-4 rounded-full mb-4 inline-flex">
             <Rocket className="w-10 h-10 text-primary" />
         </div>
-        <CardTitle className="text-4xl font-bold font-headline">CodePilot</CardTitle>
-        <CardDescription className="text-lg">
+        <CardTitle className="text-3xl md:text-4xl font-bold font-headline">CodePilot</CardTitle>
+        <CardDescription className="text-md md:text-lg">
           Enter a public GitHub repository URL to start asking questions.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 md:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -80,7 +80,7 @@ export function UrlInputForm({ onIngestionSuccess }: UrlInputFormProps) {
                 <FormItem>
                   <FormLabel className="sr-only">GitHub Repository URL</FormLabel>
                   <FormControl>
-                    <Input className="text-base" placeholder="https://github.com/user/repo" {...field} />
+                    <Input placeholder="https://github.com/user/repo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
