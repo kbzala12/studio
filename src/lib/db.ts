@@ -65,16 +65,6 @@ async function initializeDatabase() {
       );
     `);
 
-    // Check if admin exists, if not, create it
-    const admin = await newDb.get('SELECT * FROM users WHERE name = ?', 'Zala kb 101');
-    if (!admin) {
-        await newDb.run(
-            'INSERT INTO users (name, password, isAdmin) VALUES (?, ?, ?)',
-            'Zala kb 101',
-            'zala1234567',
-            true
-        );
-    }
     db = newDb;
   }
   return db;
