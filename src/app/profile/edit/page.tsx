@@ -37,10 +37,11 @@ const formSchema = z.object({
     path: ["newPassword"],
 });
 
-
 type UserData = {
     name: string;
 };
+
+const ADMIN_USERNAME = 'Zala kb 101';
 
 export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +80,8 @@ export default function EditProfilePage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         if (!currentUser) return;
+        
+        const isCurrentUserAdmin = currentUser.name.toLowerCase() === ADMIN_USERNAME.toLowerCase();
 
         try {
             const userAccountKey = `user_${currentUser.name}`;
@@ -91,20 +94,29 @@ export default function EditProfilePage() {
 
             const userAccount = JSON.parse(existingUserRaw);
 
-            // Verify current password
             if (userAccount.password !== values.currentPassword) {
                 toast({ variant: "destructive", title: "Incorrect Password", description: "The current password you entered is incorrect." });
                 form.setError("currentPassword", { type: "manual", message: "Incorrect password" });
                 return;
             }
 
-            // Update user data
             let updatedUserData = { ...userAccount };
             let updatedUsername = currentUser.name;
 
-            // Update name if changed
             if (values.newName && values.newName !== currentUser.name) {
-                // Check if new name already exists
+                // Prevent normal users from taking admin name
+                if (values.newName.toLowerCase() === ADMIN_USERNAME.toLowerCase() && !isCurrentUserAdmin) {
+                     toast({ variant: "destructive", title: "Name Taken", description: "This name is reserved. Please choose another." });
+                     form.setError("newName", { type: "manual", message: "Name is reserved" });
+                     return;
+                }
+                 // Prevent admin from changing their name
+                if (isCurrentUserAdmin && values.newName.toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
+                    toast({ variant: "destructive", title: "Action Not Allowed", description: "Admin username cannot be changed." });
+                    form.setError("newName", { type: "manual", message: "Admin name cannot be changed" });
+                    return;
+                }
+
                 const newUsernameKey = `user_${values.newName}`;
                 if (localStorage.getItem(newUsernameKey)) {
                     toast({ variant: "destructive", title: "Name Taken", description: "This name is already in use. Please choose another." });
@@ -112,14 +124,12 @@ export default function EditProfilePage() {
                     return;
                 }
                 
-                // Update data and move to new key
                 updatedUserData.name = values.newName;
                 updatedUsername = values.newName;
                 
                 localStorage.setItem(newUsernameKey, JSON.stringify(updatedUserData));
-                localStorage.removeItem(userAccountKey); // remove old user data
+                localStorage.removeItem(userAccountKey); 
 
-                 // Move associated coin data
                 const oldCoinKey = `userCoins_${currentUser.name}`;
                 const newCoinKey = `userCoins_${values.newName}`;
                 const coins = localStorage.getItem(oldCoinKey);
@@ -129,15 +139,11 @@ export default function EditProfilePage() {
                 }
             }
             
-            // Update password if new one is provided
             if (values.newPassword) {
                 updatedUserData.password = values.newPassword;
             }
             
-            // Save updated data
             localStorage.setItem(`user_${updatedUsername}`, JSON.stringify(updatedUserData));
-
-            // Update current user session
             localStorage.setItem('currentUser', JSON.stringify({ name: updatedUsername }));
             
             toast({ title: "Profile Updated!", description: "Your changes have been saved successfully." });
