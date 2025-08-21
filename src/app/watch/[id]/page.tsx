@@ -369,7 +369,7 @@ export default function WatchPage() {
                         </div>
                     </div>
                     <p className="mt-4 text-muted-foreground">
-                        Watch the full video on YouTube for more details. Rewards are only provided for watching here.
+                        Rewards are only provided for watching here.
                     </p>
                 </CardContent>
             </Card>
