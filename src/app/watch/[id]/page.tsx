@@ -3,13 +3,13 @@
 
 import {Youtube, ArrowLeft, Bell} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
-import {useEffect, useRef} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
+import { useToast } from "@/hooks/use-toast";
 
 // YouTube Player states
 const YT_PLAYER_STATE = {
@@ -21,9 +21,29 @@ const YT_PLAYER_STATE = {
   CUED: 5,
 };
 
+const REWARD_INTERVAL = 30000; // 30 seconds
+
+async function awardCoin() {
+    try {
+        const response = await fetch('/api/videos/reward', {
+            method: 'POST',
+        });
+        if (response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (error) {
+        console.error("Failed to award coin:", error);
+        return null;
+    }
+}
+
 export default function WatchPage() {
   const {id} = useParams();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const videoId = Array.isArray(id) ? id[0] : id;
   
   const videoTitle = searchParams.get('title') || 'Video Title';
@@ -33,8 +53,50 @@ export default function WatchPage() {
   const isShort = searchParams.get('isShort') === 'true';
 
   const playerRef = useRef<any>(null);
+  const rewardIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Load YouTube Player API and initialize player
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/sessions');
+        setIsLoggedIn(res.ok);
+      } catch (error) {
+        setIsLoggedIn(false);
+      }
+    }
+    checkSession();
+  }, []);
+
+  const handleReward = async () => {
+    if (!isLoggedIn) return;
+
+    const result = await awardCoin();
+    if (result) {
+        toast({
+            title: "+1 Coin Awarded!",
+            description: `Your new balance is ${result.newCoinBalance}.`,
+        });
+    }
+  };
+
+  const startRewardCycle = () => {
+      if (rewardIntervalRef.current) clearInterval(rewardIntervalRef.current);
+      if (!isLoggedIn) return;
+
+      rewardIntervalRef.current = setInterval(() => {
+          if (playerRef.current && playerRef.current.getPlayerState() === YT_PLAYER_STATE.PLAYING) {
+              handleReward();
+          }
+      }, REWARD_INTERVAL);
+  };
+  
+  const stopRewardCycle = () => {
+      if (rewardIntervalRef.current) {
+          clearInterval(rewardIntervalRef.current);
+          rewardIntervalRef.current = null;
+      }
+  };
+
   useEffect(() => {
     const onYouTubeIframeAPIReady = () => {
       playerRef.current = new (window as any).YT.Player('youtube-player', {
@@ -44,6 +106,13 @@ export default function WatchPage() {
         playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0 },
         events: {
           onReady: (event: any) => event.target.playVideo(),
+          onStateChange: (event: any) => {
+            if (event.data === YT_PLAYER_STATE.PLAYING) {
+                startRewardCycle();
+            } else {
+                stopRewardCycle();
+            }
+          }
         },
       });
     };
@@ -59,11 +128,12 @@ export default function WatchPage() {
     }
 
     return () => {
+        stopRewardCycle();
         if (playerRef.current && typeof playerRef.current.destroy === 'function') {
             playerRef.current.destroy();
         }
     }
-  }, [videoId]);
+  }, [videoId, isLoggedIn]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
