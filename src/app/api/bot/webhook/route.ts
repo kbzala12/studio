@@ -18,7 +18,8 @@ bot.telegram.getMe().then(botInfo => {
 });
 
 const getWebAppKeyboard = () => {
-    const webAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+    // The URL for the web app now points to our new auth handler page.
+    const webAppUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/telegram`;
      if (!webAppUrl) {
         console.error("NEXT_PUBLIC_APP_URL is not configured.");
         return Markup.inlineKeyboard([]);
