@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 
-const ADMIN_USERNAME = 'Zala kb';
+const ADMIN_USERNAME = 'Zala kb 101';
 
 type SubmittedVideo = {
     url: string;

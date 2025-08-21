@@ -9,7 +9,7 @@ import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-reac
 import Image from 'next/image';
 import Link from 'next/link';
 
-const ADMIN_USERNAME = 'Zala kb';
+const ADMIN_USERNAME = 'Zala kb 101';
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
