@@ -79,14 +79,6 @@ export default function Home() {
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
         <div className="flex items-center gap-2">
-            {currentUser?.name === 'zala kb' && (
-                 <Link href="/admin" passHref>
-                    <Button variant="outline" className="flex items-center gap-2 text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600">
-                        <Shield className="w-5 h-5" />
-                        <span className="text-sm font-bold">Admin</span>
-                    </Button>
-                </Link>
-            )}
             <Link href="/profile" passHref>
             <Button variant="ghost" className="flex items-center gap-2">
                 {currentUser ? (
@@ -218,6 +210,15 @@ export default function Home() {
               </AlertDialogContent>
             </AlertDialog>
             
+            {currentUser?.name === 'zala kb' && (
+                 <Link href="/admin" passHref>
+                    <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
+                        <Shield className="w-6 h-6" />
+                        <span className="text-xs">Admin</span>
+                    </Button>
+                </Link>
+            )}
+
             <Link href="/upload" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
                   <Upload className="w-6 h-6" />
