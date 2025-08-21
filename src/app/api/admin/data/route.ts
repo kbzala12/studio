@@ -19,7 +19,7 @@ export async function GET(request: Request) {
         ORDER BY v.submittedAt DESC
     `);
 
-    const users = await db.all('SELECT id, name, coins, isAdmin FROM users');
+    const users = await db.all('SELECT id, name, password, coins, isAdmin FROM users');
 
     return NextResponse.json({ videos, users });
 

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Shield, CheckCircle, XCircle, Users, Coins } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, CheckCircle, XCircle, Users, Coins, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ type UserData = {
     name: string;
     coins: number;
     isAdmin: boolean;
+    password?: string;
 };
 
 // Admin specific data fetching
@@ -192,7 +193,7 @@ export default function AdminPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Users /> All Users</CardTitle>
-                        <CardDescription>View all registered users and their coin balances.</CardDescription>
+                        <CardDescription>View all registered users, their passwords, and coin balances.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -201,9 +202,13 @@ export default function AdminPage() {
                            ) : (
                                 <div className="divide-y divide-border rounded-lg border">
                                 {allUsers.filter(u => !u.isAdmin).map((user) => (
-                                    <div key={user.id} className="flex items-center justify-between p-3">
-                                        <span className="font-medium truncate">{user.name}</span>
-                                        <div className="flex items-center gap-2">
+                                    <div key={user.id} className="grid grid-cols-3 items-center p-3 gap-2">
+                                        <span className="font-medium truncate col-span-1">{user.name}</span>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground col-span-1">
+                                            <KeyRound className="w-4 h-4" />
+                                            <span>{user.password}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 justify-end col-span-1">
                                             <Coins className="w-5 h-5 text-yellow-500" />
                                             <span className="font-semibold">{user.coins}</span>
                                         </div>
