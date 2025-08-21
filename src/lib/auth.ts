@@ -20,6 +20,9 @@ const dbPromise: Promise<Database> = getDb();
 const adapterPromise = dbPromise.then(db => {
     // Better-sqlite3 adapter expects the raw driver instance, not the `sqlite` wrapper
     const rawDb = (db.driver as any).db;
+    if (!rawDb) {
+        throw new Error("Could not get the raw better-sqlite3 instance.");
+    }
     return new BetterSqlite3Adapter(rawDb, {
         user: 'users',
         session: 'sessions'
