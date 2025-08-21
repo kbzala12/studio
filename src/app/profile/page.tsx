@@ -13,8 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Coins, LogOut, ArrowLeft, Edit, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
-const formSchema = z.object({
+const signupSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
   confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters." }),
@@ -30,24 +31,57 @@ const loginSchema = z.object({
 
 type UserData = {
     name: string;
+    coins: number;
+    isAdmin: boolean;
 };
 
 const ADMIN_USERNAME = 'Zala kb 101';
-const ADMIN_PASSWORD = 'zala1234567';
+
+// These would be server actions in a real app
+async function handleLoginRequest(values: z.infer<typeof loginSchema>) {
+    // In a real app, this would be an API call
+    const userKey = `user_${values.name}`;
+    const userAccountRaw = localStorage.getItem(userKey);
+    if (!userAccountRaw) {
+        // Special case for admin first-time "login"
+        if(values.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && values.password === 'zala1234567') {
+             const adminData = { name: ADMIN_USERNAME, password: 'zala1234567', isAdmin: true };
+             localStorage.setItem(`user_${ADMIN_USERNAME}`, JSON.stringify(adminData));
+             localStorage.setItem(`userCoins_${ADMIN_USERNAME}`, '0');
+             return { name: ADMIN_USERNAME, coins: 0, isAdmin: true };
+        }
+        throw new Error("User not found");
+    }
+    const userAccount = JSON.parse(userAccountRaw);
+    if (userAccount.password !== values.password) {
+        throw new Error("Invalid credentials");
+    }
+    const userCoins = localStorage.getItem(`userCoins_${userAccount.name}`) || '0';
+    return { name: userAccount.name, coins: parseInt(userCoins, 10), isAdmin: !!userAccount.isAdmin };
+}
+
+async function handleSignupRequest(values: z.infer<typeof signupSchema>) {
+    const { name, password } = values;
+     if (name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+        throw new Error("This name is reserved.");
+    }
+    const userKey = `user_${name}`;
+    if (localStorage.getItem(userKey)) {
+        throw new Error("User already exists");
+    }
+    const newUser = { name, password, isAdmin: false };
+    localStorage.setItem(userKey, JSON.stringify(newUser));
+    localStorage.setItem(`userCoins_${name}`, '0');
+    return { name, coins: 0, isAdmin: false };
+}
+
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
-  const [coins, setCoins] = useState(0);
   const [isLoginView, setIsLoginView] = useState(true);
   const { toast } = useToast();
-
-  const loadUserData = (username: string) => {
-    const savedCoins = localStorage.getItem(`userCoins_${username}`);
-    const userCoins = savedCoins ? parseInt(savedCoins, 10) : 0;
-    setCoins(userCoins);
-  };
+  const router = useRouter();
 
   useEffect(() => {
     // Check if user is logged in from localStorage
@@ -56,8 +90,6 @@ export default function ProfilePage() {
       try {
         const user = JSON.parse(loggedInUser);
         setCurrentUser(user);
-        setIsLoggedIn(true);
-        loadUserData(user.name);
       } catch (e) {
         console.error("Failed to parse user data from localStorage", e);
         localStorage.removeItem('currentUser');
@@ -65,7 +97,7 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const currentFormSchema = isLoginView ? loginSchema : formSchema;
+  const currentFormSchema = isLoginView ? loginSchema : signupSchema;
 
   const form = useForm<z.infer<typeof currentFormSchema>>({
     resolver: zodResolver(currentFormSchema),
@@ -77,23 +109,18 @@ export default function ProfilePage() {
   });
 
    useEffect(() => {
-    form.reset({
-      name: '',
-      password: '',
-      ...(isLoginView ? {} : { confirmPassword: '' }),
-    });
+    form.reset();
   }, [isLoginView, form]);
 
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
-    setIsLoggedIn(false);
     setCurrentUser(null);
-    setCoins(0);
     toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",
     });
+    router.push('/');
   };
 
   async function onSubmit(values: z.infer<typeof currentFormSchema>) {
@@ -101,95 +128,27 @@ export default function ProfilePage() {
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
 
     try {
+        let userData;
         if (isLoginView) {
-            // Login logic
-            const loginValues = values as z.infer<typeof loginSchema>;
-            
-            if (loginValues.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-                 const adminAccountRaw = localStorage.getItem(`user_${ADMIN_USERNAME}`);
-                 if (adminAccountRaw) {
-                     const adminAccount = JSON.parse(adminAccountRaw);
-                     if (adminAccount.password === loginValues.password) {
-                         localStorage.setItem('currentUser', JSON.stringify({ name: ADMIN_USERNAME }));
-                         setCurrentUser({ name: ADMIN_USERNAME });
-                         setIsLoggedIn(true);
-                         loadUserData(ADMIN_USERNAME);
-                         toast({ title: "Admin Login Successful!" });
-                     } else {
-                         toast({ variant: "destructive", title: "Invalid Admin Password" });
-                     }
-                 } else {
-                      // Admin logs in for the first time, check if password matches the hardcoded one.
-                      if(loginValues.password === ADMIN_PASSWORD) {
-                        const newUser = { name: ADMIN_USERNAME, password: ADMIN_PASSWORD };
-                        localStorage.setItem(`user_${ADMIN_USERNAME}`, JSON.stringify(newUser));
-                        localStorage.setItem('currentUser', JSON.stringify({ name: ADMIN_USERNAME }));
-                        localStorage.setItem(`userCoins_${ADMIN_USERNAME}`, '0');
-                        setCurrentUser({ name: ADMIN_USERNAME });
-                        setIsLoggedIn(true);
-                        loadUserData(ADMIN_USERNAME);
-                        toast({ title: "Admin Account Created!", description: "You are now logged in." });
-                      } else {
-                         toast({ variant: "destructive", title: "Invalid Admin Password" });
-                      }
-                 }
-            } else {
-                const userAccountKey = `user_${loginValues.name}`;
-                const existingUser = localStorage.getItem(userAccountKey);
-                if (existingUser) {
-                    const user = JSON.parse(existingUser);
-                    if (user.password === values.password) {
-                        localStorage.setItem('currentUser', JSON.stringify({ name: user.name }));
-                        setCurrentUser({ name: user.name });
-                        setIsLoggedIn(true);
-                        loadUserData(user.name);
-                        toast({ title: "Login Successful!" });
-                    } else {
-                        toast({ variant: "destructive", title: "Invalid credentials" });
-                    }
-                } else {
-                    toast({ variant: "destructive", title: "User not found" });
-                }
-            }
+            userData = await handleLoginRequest(values as z.infer<typeof loginSchema>);
+            toast({ title: "Login Successful!" });
         } else {
-            // Signup logic
-            const signupValues = values as z.infer<typeof formSchema>;
-            const username = signupValues.name;
-
-            if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-                 toast({ variant: "destructive", title: "Invalid Name", description: "This name is reserved." });
-                 return;
-            }
-            
-            const userAccountKey = `user_${username}`;
-            const existingUser = localStorage.getItem(userAccountKey);
-
-            if (existingUser) {
-                toast({ variant: "destructive", title: "User already exists", description: "Please choose a different name or log in." });
-            } else {
-                const newUser = { name: username, password: signupValues.password };
-                
-                localStorage.setItem(userAccountKey, JSON.stringify(newUser));
-                localStorage.setItem('currentUser', JSON.stringify({ name: username }));
-                localStorage.setItem(`userCoins_${username}`, '0');
-
-                setCurrentUser({ name: username });
-                setIsLoggedIn(true);
-                loadUserData(username);
-                toast({ title: "Account Created!", description: "You are now logged in." });
-            }
+            userData = await handleSignupRequest(values as z.infer<typeof signupSchema>);
+            toast({ title: "Account Created!", description: "You are now logged in." });
         }
-    } catch (error) {
-        toast({ variant: "destructive", title: "An error occurred" });
+        
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        setCurrentUser(userData);
+        form.reset();
+
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Failed", description: error.message });
     } finally {
         setIsLoading(false);
-        form.reset();
     }
   }
 
-  if (isLoggedIn && currentUser) {
-    const isAdmin = currentUser.name.toLowerCase() === ADMIN_USERNAME.toLowerCase();
-
+  if (currentUser) {
     return (
         <div className="flex flex-col h-screen bg-background text-foreground">
              <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
@@ -212,13 +171,13 @@ export default function ProfilePage() {
                         <CardContent className="text-center space-y-4">
                             <div className="text-4xl font-bold flex items-center justify-center gap-3">
                                 <Coins className="w-10 h-10 text-yellow-500" />
-                                <span>{coins}</span>
+                                <span>{currentUser.coins}</span>
                             </div>
                             <p className="text-muted-foreground -mt-2">Your Coin Balance</p>
                         </CardContent>
                     </Card>
 
-                    {isAdmin && (
+                    {currentUser.isAdmin && (
                         <Link href="/admin" passHref>
                             <Button variant="secondary" className="w-full mt-4">
                                 <Shield className="mr-2 h-4 w-4" /> Admin Panel

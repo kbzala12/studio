@@ -15,6 +15,7 @@ import Image from 'next/image';
 const ADMIN_USERNAME = 'Zala kb 101';
 
 type SubmittedVideo = {
+    id: number;
     url: string;
     submittedBy: string;
     submittedAt: string;
@@ -25,6 +26,34 @@ type UserData = {
     name: string;
     coins: number;
 };
+
+// Mock server actions - replace with actual API calls to your DB
+async function getAdminData() {
+    // In a real app, you would fetch this from your server
+    const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
+    
+    const users: UserData[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('user_') && key.substring(5).toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
+            const userName = key.substring(5);
+            const userCoins = localStorage.getItem(`userCoins_${userName}`);
+            users.push({
+                name: userName,
+                coins: userCoins ? parseInt(userCoins, 10) : 0,
+            });
+        }
+    }
+    return { videos, users };
+}
+
+async function updateVideoStatus(videoId: number, status: 'approved' | 'rejected') {
+     const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
+     const updatedVideos = videos.map((v: SubmittedVideo) => v.id === videoId ? { ...v, status } : v);
+     localStorage.setItem('submittedVideos', JSON.stringify(updatedVideos));
+     return updatedVideos;
+}
+
 
 export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(true);
@@ -42,53 +71,43 @@ export default function AdminPage() {
             setCurrentUser(user);
             if (user.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
                 setIsAuthorized(true);
-                loadSubmittedVideos();
-                loadAllUsersData();
+                fetchAdminData();
             }
         }
         setIsLoading(false);
     }, []);
-
-    const loadSubmittedVideos = () => {
-        const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
-        setSubmittedVideos(videos);
-    };
     
-    const loadAllUsersData = () => {
-        const users: UserData[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('user_') && key.substring(5).toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
-                const userName = key.substring(5);
-                const userCoins = localStorage.getItem(`userCoins_${userName}`);
-                users.push({
-                    name: userName,
-                    coins: userCoins ? parseInt(userCoins, 10) : 0,
-                });
-            }
-        }
+    const fetchAdminData = async () => {
+        setIsLoading(true);
+        // This is where you would call your server to get data
+        const {videos, users} = await getAdminData();
+        setSubmittedVideos(videos);
         setAllUsers(users);
-    };
+        setIsLoading(false);
+    }
 
-    const handleVideoStatusChange = (videoUrl: string, newStatus: 'approved' | 'rejected') => {
-        const updatedVideos = submittedVideos.map(video => 
-            video.url === videoUrl ? { ...video, status: newStatus } : video
+    const handleVideoStatusChange = async (videoId: number, newStatus: 'approved' | 'rejected') => {
+        // Optimistic update
+        const originalVideos = submittedVideos;
+        const updated = submittedVideos.map(video => 
+            video.id === videoId ? { ...video, status: newStatus } : video
         );
-        
-        if (newStatus === 'approved') {
-            const videoToApprove = submittedVideos.find(v => v.url === videoUrl);
-            if (videoToApprove) {
-                console.log(`Video ${videoUrl} approved. Add it to the main list.`);
-            }
-        }
-        
-        localStorage.setItem('submittedVideos', JSON.stringify(updatedVideos));
-        setSubmittedVideos(updatedVideos);
+        setSubmittedVideos(updated);
 
-        toast({
-            title: `Video ${newStatus}`,
-            description: `The video has been successfully ${newStatus}.`,
-        });
+        try {
+            await updateVideoStatus(videoId, newStatus);
+            toast({
+                title: `Video ${newStatus}`,
+                description: `The video has been successfully ${newStatus}.`,
+            });
+        } catch (error) {
+            setSubmittedVideos(originalVideos);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Failed to update video status.'
+            });
+        }
     };
     
     const getYoutubeVideoId = (url: string) => {
@@ -129,7 +148,7 @@ export default function AdminPage() {
                     </div>
                 </header>
                 <main className="flex-grow flex items-center justify-center p-4 text-center">
-                    <Card className="p-8">
+                    <Card className="w-full max-w-md p-8">
                         <Shield className="w-16 h-16 mx-auto text-destructive" />
                         <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
                         <p className="text-muted-foreground">You do not have permission to view this page.</p>
@@ -196,7 +215,7 @@ export default function AdminPage() {
                                     const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : 'https://placehold.co/120x90.png';
 
                                     return (
-                                        <div key={index}>
+                                        <div key={video.id}>
                                             <div className="flex flex-col md:flex-row items-center gap-4 p-4 rounded-lg bg-muted/50">
                                                 <Image 
                                                     src={thumbnailUrl} 
@@ -215,15 +234,15 @@ export default function AdminPage() {
                                                         className="mt-2"
                                                     >
                                                         {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
-                                                    </Badge>
+                                                     </Badge>
                                                 </div>
                                                 <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                                                     {video.status === 'pending' && (
                                                         <>
-                                                            <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleVideoStatusChange(video.url, 'approved')}>
+                                                            <Button size="sm" variant="outline" className="text-green-600 border-green-600 hover:bg-green-100 hover:text-green-700" onClick={() => handleVideoStatusChange(video.id, 'approved')}>
                                                                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
                                                             </Button>
-                                                            <Button size="sm" variant="destructive" onClick={() => handleVideoStatusChange(video.url, 'rejected')}>
+                                                            <Button size="sm" variant="destructive" onClick={() => handleVideoStatusChange(video.id, 'rejected')}>
                                                                 <XCircle className="mr-2 h-4 w-4" /> Reject
                                                             </Button>
                                                         </>

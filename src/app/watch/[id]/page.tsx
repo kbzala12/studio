@@ -27,6 +27,95 @@ const YT_PLAYER_STATE = {
   CUED: 5,
 };
 
+// Mock server actions, replace with real API calls
+async function fetchWatchPageData(username: string, videoId: string) {
+    // In a real app, this would fetch from a database
+    const savedCoins = localStorage.getItem(`userCoins_${username}`);
+    const coins = savedCoins ? parseInt(savedCoins, 10) : 0;
+    
+    const dailyDataRaw = localStorage.getItem(`dailyCoinData_${username}`);
+    let dailyCoinsEarned = 0;
+    if (dailyDataRaw) {
+        const { date, amount } = JSON.parse(dailyDataRaw);
+        const today = new Date().toISOString().split('T')[0];
+        if (date === today) {
+            dailyCoinsEarned = amount;
+        }
+    }
+
+    const giftDataRaw = localStorage.getItem(`dailyGiftData_${username}`);
+    let nextGiftTimestamp: number | null = null;
+    if(giftDataRaw) {
+        const timestamp = JSON.parse(giftDataRaw).nextGiftTimestamp;
+        if (timestamp && new Date().getTime() < timestamp) {
+            nextGiftTimestamp = timestamp;
+        }
+    }
+
+    const lastClaimedRaw = localStorage.getItem(`videoClaim_${username}_${videoId}`);
+    let rewardClaimedForVideo = false;
+    if (lastClaimedRaw) {
+        const lastClaimDate = new Date(lastClaimedRaw);
+        const today = new Date();
+        if (lastClaimDate.toDateString() === today.toDateString()) {
+            rewardClaimedForVideo = true;
+        }
+    }
+
+    return { coins, dailyCoinsEarned, nextGiftTimestamp, rewardClaimedForVideo };
+}
+
+async function claimDailyGift(username: string) {
+    const savedCoins = localStorage.getItem(`userCoins_${username}`);
+    const coins = savedCoins ? parseInt(savedCoins, 10) : 0;
+    const newTotalCoins = coins + DAILY_GIFT_AMOUNT;
+    localStorage.setItem(`userCoins_${username}`, newTotalCoins.toString());
+    
+    const nextTimestamp = new Date().getTime() + 24 * 60 * 60 * 1000;
+    localStorage.setItem(`dailyGiftData_${username}`, JSON.stringify({ nextGiftTimestamp: nextTimestamp }));
+
+     const currentUserRaw = localStorage.getItem('currentUser');
+    if (currentUserRaw) {
+        const currentUser = JSON.parse(currentUserRaw);
+        currentUser.coins = newTotalCoins;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+    
+    return { newTotalCoins, nextGiftTimestamp: nextTimestamp };
+}
+
+async function claimVideoReward(username: string, videoId: string) {
+    const savedCoins = localStorage.getItem(`userCoins_${username}`);
+    const coins = savedCoins ? parseInt(savedCoins, 10) : 0;
+    const newTotalCoins = coins + REWARD_AMOUNT;
+    localStorage.setItem(`userCoins_${username}`, newTotalCoins.toString());
+    
+    const today = new Date();
+    localStorage.setItem(`videoClaim_${username}_${videoId}`, today.toISOString());
+
+    const dailyDataRaw = localStorage.getItem(`dailyCoinData_${username}`);
+    let dailyCoinsEarned = 0;
+    if (dailyDataRaw) {
+        const { date, amount } = JSON.parse(dailyDataRaw);
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (date === todayStr) {
+            dailyCoinsEarned = amount;
+        }
+    }
+    const newDailyAmount = dailyCoinsEarned + REWARD_AMOUNT;
+    localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
+    
+    const currentUserRaw = localStorage.getItem('currentUser');
+    if (currentUserRaw) {
+        const currentUser = JSON.parse(currentUserRaw);
+        currentUser.coins = newTotalCoins;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    return { newTotalCoins, newDailyAmount };
+}
+
+
 export default function WatchPage() {
   const {id} = useParams();
   const searchParams = useSearchParams();
@@ -41,9 +130,7 @@ export default function WatchPage() {
 
   const REWARD_DURATION_SECONDS = isShort ? 60 : 180;
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
-  const [coins, setCoins] = useState(0);
+  const [currentUser, setCurrentUser] = useState<{name: string, coins: number} | null>(null);
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
   const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
@@ -65,50 +152,18 @@ export default function WatchPage() {
     if (loggedInUser) {
         const user = JSON.parse(loggedInUser);
         setCurrentUser(user);
-        setIsLoggedIn(true);
         loadUserData(user.name);
-    } else {
-        setIsLoggedIn(false);
     }
   }, [videoId]);
 
-  const loadUserData = (username: string) => {
-    const savedCoins = localStorage.getItem(`userCoins_${username}`);
-    setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
-    
-    const dailyData = localStorage.getItem(`dailyCoinData_${username}`);
-    if (dailyData) {
-        const { date, amount } = JSON.parse(dailyData);
-        const today = new Date().toISOString().split('T')[0];
-        if (date === today) {
-            setDailyCoinsEarned(amount);
-        } else {
-            localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today, amount: 0 }));
-            setDailyCoinsEarned(0);
-        }
-    } else {
-        const today = new Date().toISOString().split('T')[0];
-        localStorage.setItem(`dailyCoinData_${username}`, JSON.stringify({ date: today, amount: 0 }));
-        setDailyCoinsEarned(0);
-    }
-    
-    const giftData = localStorage.getItem(`dailyGiftData_${username}`);
-    if(giftData) {
-        const timestamp = JSON.parse(giftData).nextGiftTimestamp;
-        if (timestamp && new Date().getTime() < timestamp) {
-            setNextGiftTimestamp(timestamp);
-        }
-    }
-
-
-    const lastClaimed = localStorage.getItem(`videoClaim_${username}_${videoId}`);
-    if (lastClaimed) {
-        const lastClaimDate = new Date(lastClaimed);
-        const today = new Date();
-        if (lastClaimDate.toDateString() === today.toDateString()) {
-            setRewardClaimedForVideo(true);
-            setTimeWatched(REWARD_DURATION_SECONDS);
-        }
+  const loadUserData = async (username: string) => {
+    const data = await fetchWatchPageData(username, videoId);
+    setCurrentUser(prev => prev ? {...prev, coins: data.coins} : null);
+    setDailyCoinsEarned(data.dailyCoinsEarned);
+    setNextGiftTimestamp(data.nextGiftTimestamp);
+    setRewardClaimedForVideo(data.rewardClaimedForVideo);
+    if(data.rewardClaimedForVideo) {
+        setTimeWatched(REWARD_DURATION_SECONDS);
     }
   }
 
@@ -128,6 +183,7 @@ export default function WatchPage() {
             setCountdown('');
             setNextGiftTimestamp(null);
             if(currentUser) {
+                // In real app, this state would be managed by the server
                 localStorage.removeItem(`dailyGiftData_${currentUser.name}`);
             }
             return;
@@ -193,7 +249,7 @@ export default function WatchPage() {
 
   // Main timer interval for video reward
   useEffect(() => {
-    if (!isLoggedIn || rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
+    if (!currentUser || rewardClaimedForVideo || isTimerComplete || isTimerPaused || hasReachedDailyLimit) {
       return;
     }
 
@@ -208,7 +264,7 @@ export default function WatchPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isLoggedIn, rewardClaimedForVideo, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS, hasReachedDailyLimit]);
+  }, [currentUser, rewardClaimedForVideo, isTimerComplete, isTimerPaused, REWARD_DURATION_SECONDS, hasReachedDailyLimit]);
 
   // Handle browser tab visibility
   useEffect(() => {
@@ -244,26 +300,25 @@ export default function WatchPage() {
     };
   }, [toast, dismiss]);
   
-  const handleClaimDailyGift = () => {
-    if (!currentUser || !isLoggedIn || isGiftClaimed) return;
+  const handleClaimDailyGift = async () => {
+    if (!currentUser || isGiftClaimed) return;
 
-    const newTotalCoins = coins + DAILY_GIFT_AMOUNT;
-    setCoins(newTotalCoins);
-    localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
-    
-    const nextTimestamp = new Date().getTime() + 24 * 60 * 60 * 1000;
-    localStorage.setItem(`dailyGiftData_${currentUser.name}`, JSON.stringify({ nextGiftTimestamp: nextTimestamp }));
-    setNextGiftTimestamp(nextTimestamp);
-
-    toast({
-        title: "Daily Gift Claimed!",
-        description: `You've earned ${DAILY_GIFT_AMOUNT} coins.`,
-        action: <CheckCircle className="text-green-500" />
-    });
+    try {
+        const { newTotalCoins, nextGiftTimestamp } = await claimDailyGift(currentUser.name);
+        setCurrentUser(prev => prev ? {...prev, coins: newTotalCoins} : null);
+        setNextGiftTimestamp(nextGiftTimestamp);
+        toast({
+            title: "Daily Gift Claimed!",
+            description: `You've earned ${DAILY_GIFT_AMOUNT} coins.`,
+            action: <CheckCircle className="text-green-500" />
+        });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not claim gift.'})
+    }
   }
 
-  const handleClaimReward = () => {
-    if (!currentUser || !isLoggedIn) return;
+  const handleClaimReward = async () => {
+    if (!currentUser) return;
 
     if (hasReachedDailyLimit) {
         toast({
@@ -274,27 +329,25 @@ export default function WatchPage() {
         return;
     }
       
-    const newTotalCoins = coins + REWARD_AMOUNT;
-    setCoins(newTotalCoins);
-    localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
-    
-    const today = new Date();
-    localStorage.setItem(`videoClaim_${currentUser.name}_${videoId}`, today.toISOString());
-    setRewardClaimedForVideo(true);
+    try {
+        const { newTotalCoins, newDailyAmount } = await claimVideoReward(currentUser.name, videoId);
+        setCurrentUser(prev => prev ? {...prev, coins: newTotalCoins} : null);
+        setDailyCoinsEarned(newDailyAmount);
+        setRewardClaimedForVideo(true);
 
-    const newDailyAmount = dailyCoinsEarned + REWARD_AMOUNT;
-    setDailyCoinsEarned(newDailyAmount);
-    localStorage.setItem(`dailyCoinData_${currentUser.name}`, JSON.stringify({ date: today.toISOString().split('T')[0], amount: newDailyAmount }));
+        toast({
+            title: "Reward Claimed!",
+            description: `You've earned ${REWARD_AMOUNT} coins.`,
+            action: <CheckCircle className="text-green-500" />
+        });
 
-    toast({
-        title: "Reward Claimed!",
-        description: `You've earned ${REWARD_AMOUNT} coins.`,
-        action: <CheckCircle className="text-green-500" />
-    });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not claim reward.'})
+    }
   };
 
   const getButtonText = () => {
-    if (!isLoggedIn) return "Login to Earn";
+    if (!currentUser) return "Login to Earn";
     if (rewardClaimedForVideo) return "Reward Claimed Today";
     if (hasReachedDailyLimit) return "Daily Limit Reached";
     if (isTimerComplete) return "Claim Reward";
@@ -319,11 +372,11 @@ export default function WatchPage() {
            </Link>
           <h1 className="text-xl font-bold">Watch & Earn</h1>
         </div>
-        {isLoggedIn && (
+        {currentUser && (
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                     <Coins className="w-6 h-6 text-yellow-500" />
-                    <span className="text-lg font-bold">{coins}</span>
+                    <span className="text-lg font-bold">{currentUser.coins}</span>
                 </div>
             </div>
         )}
@@ -352,8 +405,8 @@ export default function WatchPage() {
                     </div>
                     <Button 
                         className="w-full" 
-                        disabled={!isLoggedIn || !isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
-                        onClick={isLoggedIn ? handleClaimReward : () => router.push('/profile')}
+                        disabled={!currentUser || !isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
+                        onClick={currentUser ? handleClaimReward : () => router.push('/profile')}
                     >
                         {getButtonText()}
                     </Button>
@@ -391,7 +444,7 @@ export default function WatchPage() {
             </Card>
         </div>
 
-        {isLoggedIn && (
+        {currentUser && (
             <Card>
                 <CardHeader>
                     <CardTitle>Daily Gift</CardTitle>

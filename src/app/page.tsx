@@ -12,7 +12,7 @@ import Link from 'next/link';
 const ADMIN_USERNAME = 'Zala kb 101';
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
+  const [currentUser, setCurrentUser] = useState<{name: string, isAdmin: boolean} | null>(null);
   const [coins, setCoins] = useState(0);
 
   useEffect(() => {
@@ -23,6 +23,7 @@ export default function Home() {
             try {
                 const user = JSON.parse(loggedInUser);
                 setCurrentUser(user);
+                // In a real app, coin data would be fetched from a server
                 const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
                 setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
             } catch (e) {
@@ -212,7 +213,7 @@ export default function Home() {
               </AlertDialogContent>
             </AlertDialog>
             
-            {currentUser && currentUser.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && (
+            {currentUser && currentUser.isAdmin && (
                  <Link href="/admin" passHref>
                     <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
                         <Shield className="w-6 h-6" />

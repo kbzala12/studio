@@ -20,11 +20,43 @@ const formSchema = z.object({
   videoUrl: z.string().url({ message: "Please enter a valid YouTube URL." }).regex(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/, 'Must be a valid YouTube video URL.'),
 });
 
+// Mock server action
+async function submitVideo(videoUrl: string, userName: string) {
+    const userCoinsKey = `userCoins_${userName}`;
+    const currentCoins = parseInt(localStorage.getItem(userCoinsKey) || '0', 10);
+    if(currentCoins < UPLOAD_COST) {
+        throw new Error(`You need at least ${UPLOAD_COST} coins to upload a video.`);
+    }
+
+    const newTotalCoins = currentCoins - UPLOAD_COST;
+    localStorage.setItem(userCoinsKey, newTotalCoins.toString());
+
+    const submittedVideos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
+    submittedVideos.push({ 
+        url: videoUrl, 
+        submittedBy: userName, 
+        submittedAt: new Date().toISOString(), 
+        status: 'pending',
+        // In a real DB, this would be an auto-incrementing ID
+        id: Date.now() 
+    });
+    localStorage.setItem('submittedVideos', JSON.stringify(submittedVideos));
+
+    // Update the coins in the currentUser object as well
+    const currentUserRaw = localStorage.getItem('currentUser');
+    if (currentUserRaw) {
+        const currentUser = JSON.parse(currentUserRaw);
+        currentUser.coins = newTotalCoins;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    return { newTotalCoins };
+}
+
+
 export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
-  const [coins, setCoins] = useState(0);
+  const [currentUser, setCurrentUser] = useState<{name: string, coins: number} | null>(null);
   const [hasSufficientCoins, setHasSufficientCoins] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -35,13 +67,7 @@ export default function UploadPage() {
      if (loggedInUser) {
         const user = JSON.parse(loggedInUser);
         setCurrentUser(user);
-        setIsLoggedIn(true);
-        const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
-        const userCoins = savedCoins ? parseInt(savedCoins, 10) : 0;
-        setCoins(userCoins);
-        setHasSufficientCoins(userCoins >= UPLOAD_COST);
-     } else {
-        setIsLoggedIn(false);
+        setHasSufficientCoins(user.coins >= UPLOAD_COST);
      }
   }, []);
 
@@ -53,7 +79,7 @@ export default function UploadPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!currentUser || !isLoggedIn) {
+    if (!currentUser) {
         toast({
             variant: "destructive",
             title: "Not Logged In",
@@ -73,18 +99,13 @@ export default function UploadPage() {
     }
 
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
     try {
-      const newTotalCoins = coins - UPLOAD_COST;
-      setCoins(newTotalCoins);
-      localStorage.setItem(`userCoins_${currentUser.name}`, newTotalCoins.toString());
-      setHasSufficientCoins(newTotalCoins >= UPLOAD_COST);
+      const { newTotalCoins } = await submitVideo(values.videoUrl, currentUser.name);
 
-      const submittedVideos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
-      submittedVideos.push({ url: values.videoUrl, submittedBy: currentUser.name, submittedAt: new Date().toISOString(), status: 'pending' });
-      localStorage.setItem('submittedVideos', JSON.stringify(submittedVideos));
+      // Optimistically update state
+      setCurrentUser(prev => prev ? { ...prev, coins: newTotalCoins } : null);
+      setHasSufficientCoins(newTotalCoins >= UPLOAD_COST);
 
       toast({
         title: "Video Submitted!",
@@ -92,11 +113,11 @@ export default function UploadPage() {
       });
       form.reset();
 
-    } catch (error) {
+    } catch (error: any) {
         toast({
           variant: "destructive",
           title: "An error occurred",
-          description: "Failed to submit your video. Please try again.",
+          description: error.message || "Failed to submit your video. Please try again.",
         })
     } finally {
       setIsLoading(false);
@@ -114,10 +135,10 @@ export default function UploadPage() {
             </Link>
             <h1 className="text-xl font-bold">Submit Video URL</h1>
             </div>
-            {isLoggedIn && (
+            {currentUser && (
               <div className="flex items-center gap-2">
                   <Coins className="w-6 h-6 text-yellow-500" />
-                  <span className="text-lg font-bold">{coins}</span>
+                  <span className="text-lg font-bold">{currentUser.coins}</span>
               </div>
             )}
       </header>
@@ -134,7 +155,7 @@ export default function UploadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!isLoggedIn ? (
+            {!currentUser ? (
                  <div className="flex flex-col items-center justify-center text-center p-4 sm:p-8 bg-muted rounded-lg">
                     <User className="w-12 h-12 text-destructive mb-4" />
                     <h3 className="text-xl font-bold">Please Log In</h3>
