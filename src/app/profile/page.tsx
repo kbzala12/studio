@@ -35,66 +35,69 @@ type UserData = {
     isAdmin: boolean;
 };
 
+// Server actions will be in a separate file, e.g., 'app/actions/user.ts'
+// For now, we are mocking them here.
 const ADMIN_USERNAME = 'Zala kb 101';
 
-// These would be server actions in a real app
 async function handleLoginRequest(values: z.infer<typeof loginSchema>) {
-    // In a real app, this would be an API call
-    const userKey = `user_${values.name}`;
-    const userAccountRaw = localStorage.getItem(userKey);
-    if (!userAccountRaw) {
-        // Special case for admin first-time "login"
-        if(values.name.toLowerCase() === ADMIN_USERNAME.toLowerCase() && values.password === 'zala1234567') {
-             const adminData = { name: ADMIN_USERNAME, password: 'zala1234567', isAdmin: true };
-             localStorage.setItem(`user_${ADMIN_USERNAME}`, JSON.stringify(adminData));
-             localStorage.setItem(`userCoins_${ADMIN_USERNAME}`, '0');
-             return { name: ADMIN_USERNAME, coins: 0, isAdmin: true };
-        }
-        throw new Error("User not found");
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message);
     }
-    const userAccount = JSON.parse(userAccountRaw);
-    if (userAccount.password !== values.password) {
-        throw new Error("Invalid credentials");
-    }
-    const userCoins = localStorage.getItem(`userCoins_${userAccount.name}`) || '0';
-    return { name: userAccount.name, coins: parseInt(userCoins, 10), isAdmin: !!userAccount.isAdmin };
+    return result;
 }
 
 async function handleSignupRequest(values: z.infer<typeof signupSchema>) {
-    const { name, password } = values;
-     if (name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-        throw new Error("This name is reserved.");
+     const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message);
     }
-    const userKey = `user_${name}`;
-    if (localStorage.getItem(userKey)) {
-        throw new Error("User already exists");
+    return result;
+}
+
+async function handleLogoutRequest() {
+    await fetch('/api/logout', { method: 'POST' });
+}
+
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/user', { cache: 'no-store' });
+        if(response.status === 204) return null;
+        if(response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (e) {
+        return null;
     }
-    const newUser = { name, password, isAdmin: false };
-    localStorage.setItem(userKey, JSON.stringify(newUser));
-    localStorage.setItem(`userCoins_${name}`, '0');
-    return { name, coins: 0, isAdmin: false };
 }
 
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isLoginView, setIsLoginView] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const loggedInUser = localStorage.getItem('currentUser');
-    if (loggedInUser) {
-      try {
-        const user = JSON.parse(loggedInUser);
+    async function checkUserStatus() {
+        const user = await getCurrentUser();
         setCurrentUser(user);
-      } catch (e) {
-        console.error("Failed to parse user data from localStorage", e);
-        localStorage.removeItem('currentUser');
-      }
+        setIsCheckingStatus(false);
     }
+    checkUserStatus();
   }, []);
 
   const currentFormSchema = isLoginView ? loginSchema : signupSchema;
@@ -113,8 +116,8 @@ export default function ProfilePage() {
   }, [isLoginView, form]);
 
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
+  const handleLogout = async () => {
+    await handleLogoutRequest();
     setCurrentUser(null);
     toast({
         title: "Logged Out",
@@ -125,8 +128,6 @@ export default function ProfilePage() {
 
   async function onSubmit(values: z.infer<typeof currentFormSchema>) {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-
     try {
         let userData;
         if (isLoginView) {
@@ -136,10 +137,9 @@ export default function ProfilePage() {
             userData = await handleSignupRequest(values as z.infer<typeof signupSchema>);
             toast({ title: "Account Created!", description: "You are now logged in." });
         }
-        
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        setCurrentUser(userData);
+        setCurrentUser(userData.user);
         form.reset();
+        router.refresh();
 
     } catch (error: any) {
         toast({ variant: "destructive", title: "Failed", description: error.message });
@@ -147,6 +147,15 @@ export default function ProfilePage() {
         setIsLoading(false);
     }
   }
+
+  if (isCheckingStatus) {
+     return (
+        <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+     )
+  }
+
 
   if (currentUser) {
     return (
