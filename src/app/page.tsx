@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const ADMIN_USERNAME = 'Zala kb 101';
 
@@ -170,12 +171,12 @@ export default function Home() {
                   </Card>
                   <div className="flex gap-4 pt-3">
                     <div className="flex-shrink-0 relative">
-                       <Image src="https://placehold.co/48x48.png" alt="channel avatar" width={40} height={40} className="rounded-full" data-ai-hint="person avatar" />
+                       <Image src={video.thumbnail} alt={video.channel} width={40} height={40} className="rounded-full object-cover" data-ai-hint="person avatar" />
                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-background"></div>
                     </div>
                     <div className="flex flex-col">
                       <h3 className="text-base font-semibold leading-tight">{video.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">Subscribe to channel</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{video.channel}</p>
                       <p className="text-sm text-muted-foreground">
                         {video.views} &bull; {video.uploaded}
                       </p>
@@ -214,14 +215,6 @@ export default function Home() {
               </AlertDialogContent>
             </AlertDialog>
             
-            {currentUser && currentUser.isAdmin && (
-                 <Link href="/admin" passHref>
-                    <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-blue-500 hover:bg-blue-600">
-                        <Shield className="w-6 h-6" />
-                        <span className="text-xs">Admin</span>
-                    </Button>
-                </Link>
-            )}
 
             <Link href="/upload" passHref>
                 <Button variant="ghost" className="flex-col h-auto py-2 text-white bg-yellow-500 hover:bg-yellow-600">
