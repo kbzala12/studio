@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Coins, LogOut, ArrowLeft, Edit } from 'lucide-react';
+import { Loader2, User, Coins, LogOut, ArrowLeft, Edit, Shield } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
@@ -31,6 +31,8 @@ const loginSchema = z.object({
 type UserData = {
     name: string;
 };
+
+const ADMIN_USERNAME = 'zala kb';
 
 export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -144,6 +146,8 @@ export default function ProfilePage() {
   }
 
   if (isLoggedIn && currentUser) {
+    const isAdmin = currentUser.name === ADMIN_USERNAME;
+
     return (
         <div className="flex flex-col h-screen bg-background text-foreground">
              <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm">
@@ -171,8 +175,17 @@ export default function ProfilePage() {
                             <p className="text-muted-foreground -mt-2">Your Coin Balance</p>
                         </CardContent>
                     </Card>
+
+                    {isAdmin && (
+                        <Link href="/admin" passHref>
+                            <Button variant="secondary" className="w-full mt-4">
+                                <Shield className="mr-2 h-4 w-4" /> Admin Panel
+                            </Button>
+                        </Link>
+                    )}
+
                     <Link href="/profile/edit" passHref>
-                        <Button variant="outline" className="w-full mt-4">
+                        <Button variant="outline" className="w-full mt-2">
                             <Edit className="mr-2 h-4 w-4" /> Edit Profile
                         </Button>
                     </Link>

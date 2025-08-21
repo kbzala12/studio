@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Shield, CheckCircle, XCircle, Users, Coins } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,16 @@ type SubmittedVideo = {
     status: 'pending' | 'approved' | 'rejected';
 };
 
+type UserData = {
+    name: string;
+    coins: number;
+};
+
 export default function AdminPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<{name: string} | null>(null);
     const [submittedVideos, setSubmittedVideos] = useState<SubmittedVideo[]>([]);
+    const [allUsers, setAllUsers] = useState<UserData[]>([]);
     const [isAuthorized, setIsAuthorized] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
@@ -37,6 +43,7 @@ export default function AdminPage() {
             if (user.name === ADMIN_USERNAME) {
                 setIsAuthorized(true);
                 loadSubmittedVideos();
+                loadAllUsersData();
             }
         }
         setIsLoading(false);
@@ -45,6 +52,22 @@ export default function AdminPage() {
     const loadSubmittedVideos = () => {
         const videos = JSON.parse(localStorage.getItem('submittedVideos') || '[]');
         setSubmittedVideos(videos);
+    };
+    
+    const loadAllUsersData = () => {
+        const users: UserData[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('user_') && key !== `user_${ADMIN_USERNAME}`) {
+                const userName = key.substring(5);
+                const userCoins = localStorage.getItem(`userCoins_${userName}`);
+                users.push({
+                    name: userName,
+                    coins: userCoins ? parseInt(userCoins, 10) : 0,
+                });
+            }
+        }
+        setAllUsers(users);
     };
 
     const handleVideoStatusChange = (videoUrl: string, newStatus: 'approved' | 'rejected') => {
@@ -55,8 +78,6 @@ export default function AdminPage() {
         if (newStatus === 'approved') {
             const videoToApprove = submittedVideos.find(v => v.url === videoUrl);
             if (videoToApprove) {
-                // Here you would typically add the video to your main video list.
-                // For this example, we'll just update the status.
                 console.log(`Video ${videoUrl} approved. Add it to the main list.`);
             }
         }
@@ -133,7 +154,33 @@ export default function AdminPage() {
                 </div>
                 <Badge variant="secondary">Welcome, {currentUser?.name}</Badge>
             </header>
-            <main className="flex-grow p-4 md:p-6">
+            <main className="flex-grow p-4 md:p-6 space-y-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Users /> All Users</CardTitle>
+                        <CardDescription>View all registered users and their coin balances.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                           {allUsers.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-8">No other users found.</p>
+                           ) : (
+                                <div className="divide-y divide-border rounded-lg border">
+                                {allUsers.map((user, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3">
+                                        <span className="font-medium">{user.name}</span>
+                                        <div className="flex items-center gap-2">
+                                            <Coins className="w-5 h-5 text-yellow-500" />
+                                            <span className="font-semibold">{user.coins}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                </div>
+                           )}
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Submitted Videos</CardTitle>
