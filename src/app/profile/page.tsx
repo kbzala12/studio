@@ -171,9 +171,11 @@ export default function ProfilePage() {
                             <p className="text-muted-foreground -mt-2">Your Coin Balance</p>
                         </CardContent>
                     </Card>
-                    <Button variant="outline" className="w-full mt-4">
-                        <Edit className="mr-2 h-4 w-4" /> Edit Profile
-                    </Button>
+                    <Link href="/profile/edit" passHref>
+                        <Button variant="outline" className="w-full mt-4">
+                            <Edit className="mr-2 h-4 w-4" /> Edit Profile
+                        </Button>
+                    </Link>
                 </div>
                 
                 <div className="w-full max-w-md">
@@ -273,5 +275,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
