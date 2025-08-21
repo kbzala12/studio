@@ -34,11 +34,12 @@ export async function POST(request: Request) {
 
     // In a real app, you MUST hash passwords. For this demo, we're using plain text for simplicity.
     await db.run(
-      'INSERT INTO users (id, name, password, coins) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (id, name, password, coins, isAdmin) VALUES (?, ?, ?, ?, ?)',
       userId,
       name,
       password,
-      0 // Set initial coins to 0
+      0, // Set initial coins to 0
+      false // Set isAdmin to false
     );
 
     const session = await lucia.createSession(userId, {});
