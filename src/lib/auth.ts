@@ -68,4 +68,3 @@ declare module 'lucia' {
         UserId: string; // Ensure UserId is string
 	}
 }
-

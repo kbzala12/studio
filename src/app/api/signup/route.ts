@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { lucia } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { randomBytes } from 'crypto';
 
 const signupSchema = z.object({
   name: z.string().min(3, { message: 'Name must be at least 3 characters.' }),
@@ -28,21 +29,19 @@ export async function POST(request: Request) {
     if (existingUser) {
       return NextResponse.json({ message: 'This name is already in use.' }, { status: 400 });
     }
+    
+    const userId = randomBytes(16).toString('hex');
 
     // In a real app, you MUST hash passwords. For this demo, we're using plain text for simplicity.
-    const result = await db.run(
-      'INSERT INTO users (name, password, coins) VALUES (?, ?, ?)',
+    await db.run(
+      'INSERT INTO users (id, name, password, coins) VALUES (?, ?, ?, ?)',
+      userId,
       name,
       password,
       0 // Set initial coins to 0
     );
 
-    const userId = result.lastID;
-    if (!userId) {
-        return NextResponse.json({ message: 'Could not create user.' }, { status: 500 });
-    }
-
-    const session = await lucia.createSession(String(userId), {});
+    const session = await lucia.createSession(userId, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
 	  cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     
@@ -57,4 +56,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'An error occurred during signup' }, { status: 500 });
   }
 }
-
