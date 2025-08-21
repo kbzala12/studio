@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, KeyRound, User, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, User, Save } from 'lucide-react';
 import Link from 'next/link';
+import type { DatabaseUser } from '@/lib/auth';
+
 
 const formSchema = z.object({
-    newName: z.string().min(3, { message: "New name must be at least 3 characters." }),
-    currentPassword: z.string().min(1, { message: "Current password is required." }),
+    name: z.string().min(3, { message: "Name must be at least 3 characters." }),
+    currentPassword: z.string().min(1, { message: "Current password is required to save changes." }),
     newPassword: z.string().optional(),
     confirmNewPassword: z.string().optional(),
 }).refine((data) => {
@@ -37,94 +39,45 @@ const formSchema = z.object({
     path: ["newPassword"],
 });
 
-type UserData = {
-    name: string;
-    isAdmin: boolean;
-};
 
-const ADMIN_USERNAME = 'Zala kb 101';
-
-// FAKE server action - replace with actual API call
-async function updateUserProfile(data: any) {
-    console.log("Updating profile with", data);
-    // Simulate API delay
-    await new Promise(res => setTimeout(res, 1000));
-
-    const { currentName, newName, currentPassword, newPassword } = data;
-
-    // In a real app, this logic is on the server.
-    // We are mocking it here with localStorage for demonstration.
-    const userAccountKey = `user_${currentName}`;
-    const existingUserRaw = localStorage.getItem(userAccountKey);
-    if (!existingUserRaw) {
-        throw new Error("Could not find your account data.");
-    }
-    
-    const userAccount = JSON.parse(existingUserRaw);
-    if (userAccount.password !== currentPassword) {
-        throw new Error("The current password you entered is incorrect.");
-    }
-    
-    const isCurrentUserAdmin = userAccount.name.toLowerCase() === ADMIN_USERNAME.toLowerCase();
-
-    // Prevent admin from changing their name
-    if (isCurrentUserAdmin && newName.toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
-         throw new Error("Admin username cannot be changed.");
-    }
-
-    // Prevent normal user from taking admin name
-    if (newName.toLowerCase() === ADMIN_USERNAME.toLowerCase() && !isCurrentUserAdmin) {
-        throw new Error("This name is reserved. Please choose another.");
-    }
-
-    let updatedUserData = { ...userAccount };
-    let updatedUsername = currentName;
-
-    // Handle name change
-    if (newName && newName !== currentName) {
-        const newUsernameKey = `user_${newName}`;
-        if (localStorage.getItem(newUsernameKey)) {
-            throw new Error("This name is already in use. Please choose another.");
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/user', { cache: 'no-store' });
+        if(response.status === 204) return null;
+        if(response.ok) {
+            return await response.json();
         }
-        updatedUserData.name = newName;
-        updatedUsername = newName;
+        return null;
+    } catch (e) {
+        return null;
     }
-    
-    // Handle password change
-    if (newPassword) {
-        updatedUserData.password = newPassword;
-    }
+}
 
-    // Update storage
-    localStorage.setItem(`user_${updatedUsername}`, JSON.stringify(updatedUserData));
-    if (newName && newName !== currentName) {
-        localStorage.removeItem(userAccountKey);
-        // also migrate coins
-        const oldCoinKey = `userCoins_${currentName}`;
-        const newCoinKey = `userCoins_${newName}`;
-        const coins = localStorage.getItem(oldCoinKey);
-        if (coins) {
-            localStorage.setItem(newCoinKey, coins);
-            localStorage.removeItem(oldCoinKey);
-        }
+async function updateUserProfile(values: z.infer<typeof formSchema>) {
+    const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message);
     }
-    
-    const finalUserData = { name: updatedUsername, isAdmin: updatedUserData.isAdmin };
-    localStorage.setItem('currentUser', JSON.stringify(finalUserData));
-    return finalUserData;
+    return result;
 }
 
 
 export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+    const [isCheckingUser, setIsCheckingUser] = useState(true);
+    const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
     const { toast } = useToast();
     const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            newName: '',
+            name: '',
             currentPassword: '',
             newPassword: '',
             confirmNewPassword: '',
@@ -132,34 +85,23 @@ export default function EditProfilePage() {
     });
 
     useEffect(() => {
-        const loggedInUser = localStorage.getItem('currentUser');
-        if (loggedInUser) {
-            try {
-                const user = JSON.parse(loggedInUser);
+        const fetchUser = async () => {
+            const user = await getCurrentUser();
+            if (user) {
                 setCurrentUser(user);
-                form.setValue('newName', user.name);
-            } catch (e) {
-                console.error("Failed to parse user data from localStorage", e);
+                form.setValue('name', user.name);
+            } else {
                 router.push('/profile');
             }
-        } else {
-            router.push('/profile');
-        }
+            setIsCheckingUser(false);
+        };
+        fetchUser();
     }, [router, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
-        
-        if (!currentUser) return;
-
         try {
-            const updatedUser = await updateUserProfile({
-                currentName: currentUser.name,
-                newName: values.newName,
-                currentPassword: values.currentPassword,
-                newPassword: values.newPassword
-            });
-            
+            await updateUserProfile(values);
             toast({ title: "Profile Updated!", description: "Your changes have been saved successfully." });
             router.push('/profile');
             router.refresh();
@@ -168,19 +110,19 @@ export default function EditProfilePage() {
             console.error(error);
             const errorMessage = error.message || "Could not update your profile.";
             
-            if (errorMessage.includes("password")) {
+            if (errorMessage.toLowerCase().includes("password")) {
                  form.setError("currentPassword", { type: "manual", message: errorMessage });
-            } else if (errorMessage.includes("name")) {
-                 form.setError("newName", { type: "manual", message: errorMessage });
+            } else if (errorMessage.toLowerCase().includes("name")) {
+                 form.setError("name", { type: "manual", message: errorMessage });
+            } else {
+                 toast({ variant: "destructive", title: "Update Failed", description: errorMessage });
             }
-
-            toast({ variant: "destructive", title: "Update Failed", description: errorMessage });
         } finally {
             setIsLoading(false);
         }
     }
     
-    if (!currentUser) {
+    if (isCheckingUser) {
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -208,7 +150,7 @@ export default function EditProfilePage() {
                     </div>
                     <CardTitle className="text-2xl md:text-3xl font-bold font-headline">Update Your Info</CardTitle>
                     <CardDescription className="text-md">
-                        Change your name or password. Emojis are welcome! 😊
+                        Change your name or password.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -216,7 +158,7 @@ export default function EditProfilePage() {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
-                                name="newName"
+                                name="name"
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Name</FormLabel>
@@ -284,3 +226,5 @@ export default function EditProfilePage() {
         </div>
     );
 }
+
+    
