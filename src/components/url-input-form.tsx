@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,7 +14,7 @@ import { Loader2, Rocket } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
-  repoUrl: z.string().url({ message: "Please enter a valid GitHub repository URL." }).regex(/^https:\/\/github.com\/[^/]+\/[^/]+$/, 'Must be a valid public GitHub repository URL.'),
+  repoUrl: z.string().url({ message: "Please enter a valid GitHub repository URL." }).regex(/^https:\/\/github\.com\/[^/]+\/[^/]+$/, 'Must be a valid public GitHub repository URL.'),
 });
 
 type UrlInputFormProps = {
