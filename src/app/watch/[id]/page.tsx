@@ -12,10 +12,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const REWARD_AMOUNT = 30;
 const DAILY_COIN_LIMIT = 650;
 const DAILY_GIFT_AMOUNT = 10;
+const SUBSCRIBE_REWARD = 5;
+const DAILY_SUBSCRIBE_COIN_LIMIT = 150;
+
 
 // YouTube Player states
 const YT_PLAYER_STATE = {
@@ -62,7 +67,21 @@ async function fetchWatchPageData(username: string, videoId: string) {
         }
     }
 
-    return { coins, dailyCoinsEarned, nextGiftTimestamp, rewardClaimedForVideo };
+    const subscribedChannelsRaw = localStorage.getItem(`subscribedChannels_${username}`);
+    const subscribedChannels = subscribedChannelsRaw ? JSON.parse(subscribedChannelsRaw) : [];
+    
+    const dailySubDataRaw = localStorage.getItem(`dailySubscribeCoinData_${username}`);
+    let dailySubscribeCoinsEarned = 0;
+    if (dailySubDataRaw) {
+        const { date, amount } = JSON.parse(dailySubDataRaw);
+        const today = new Date().toISOString().split('T')[0];
+        if(date === today) {
+            dailySubscribeCoinsEarned = amount;
+        }
+    }
+
+
+    return { coins, dailyCoinsEarned, nextGiftTimestamp, rewardClaimedForVideo, subscribedChannels, dailySubscribeCoinsEarned };
 }
 
 async function claimDailyGift(username: string) {
@@ -115,6 +134,46 @@ async function claimVideoReward(username: string, videoId: string) {
     return { newTotalCoins, newDailyAmount };
 }
 
+async function claimSubscriptionReward(username: string, channelId: string) {
+    const savedCoins = localStorage.getItem(`userCoins_${username}`);
+    const coins = savedCoins ? parseInt(savedCoins, 10) : 0;
+    const newTotalCoins = coins + SUBSCRIBE_REWARD;
+    localStorage.setItem(`userCoins_${username}`, newTotalCoins.toString());
+
+    // Update daily subscription coins
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const dailySubDataRaw = localStorage.getItem(`dailySubscribeCoinData_${username}`);
+    let dailySubscribeCoinsEarned = 0;
+    if (dailySubDataRaw) {
+        const { date, amount } = JSON.parse(dailySubDataRaw);
+        if(date === todayStr) {
+            dailySubscribeCoinsEarned = amount;
+        }
+    }
+    const newDailySubAmount = dailySubscribeCoinsEarned + SUBSCRIBE_REWARD;
+    localStorage.setItem(`dailySubscribeCoinData_${username}`, JSON.stringify({ date: todayStr, amount: newDailySubAmount }));
+    
+    // Add channel to subscribed list
+    const subscribedChannelsRaw = localStorage.getItem(`subscribedChannels_${username}`);
+    const subscribedChannels = subscribedChannelsRaw ? JSON.parse(subscribedChannelsRaw) : [];
+    if(!subscribedChannels.includes(channelId)) {
+        subscribedChannels.push(channelId);
+        localStorage.setItem(`subscribedChannels_${username}`, JSON.stringify(subscribedChannels));
+    }
+    
+    // Update total coins in currentUser object
+    const currentUserRaw = localStorage.getItem('currentUser');
+    if (currentUserRaw) {
+        const currentUser = JSON.parse(currentUserRaw);
+        currentUser.coins = newTotalCoins;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+
+    return { newTotalCoins, newDailySubAmount };
+}
+
+
 
 export default function WatchPage() {
   const {id} = useParams();
@@ -134,6 +193,7 @@ export default function WatchPage() {
   const [timeWatched, setTimeWatched] = useState(0);
   const [rewardClaimedForVideo, setRewardClaimedForVideo] = useState(false);
   const [dailyCoinsEarned, setDailyCoinsEarned] = useState(0);
+  const [dailySubscribeCoinsEarned, setDailySubscribeCoinsEarned] = useState(0);
   const [nextGiftTimestamp, setNextGiftTimestamp] = useState<number | null>(null);
   const [countdown, setCountdown] = useState('');
   const [isTimerPaused, setIsTimerPaused] = useState(true);
@@ -145,6 +205,8 @@ export default function WatchPage() {
   const progress = useMemo(() => (timeWatched / REWARD_DURATION_SECONDS) * 100, [timeWatched, REWARD_DURATION_SECONDS]);
   const isTimerComplete = useMemo(() => timeWatched >= REWARD_DURATION_SECONDS, [timeWatched, REWARD_DURATION_SECONDS]);
   const hasReachedDailyLimit = useMemo(() => dailyCoinsEarned >= DAILY_COIN_LIMIT, [dailyCoinsEarned]);
+  const hasReachedDailySubLimit = useMemo(() => dailySubscribeCoinsEarned >= DAILY_SUBSCRIBE_COIN_LIMIT, [dailySubscribeCoinsEarned]);
+
   const isGiftClaimed = useMemo(() => nextGiftTimestamp !== null && new Date().getTime() < nextGiftTimestamp, [nextGiftTimestamp]);
 
   
@@ -161,8 +223,15 @@ export default function WatchPage() {
     const data = await fetchWatchPageData(username, videoId);
     setCurrentUser(prev => prev ? {...prev, coins: data.coins} : null);
     setDailyCoinsEarned(data.dailyCoinsEarned);
+    setDailySubscribeCoinsEarned(data.dailySubscribeCoinsEarned);
     setNextGiftTimestamp(data.nextGiftTimestamp);
     setRewardClaimedForVideo(data.rewardClaimedForVideo);
+    if(data.subscribedChannels.includes(videoChannel)) {
+        setSubscribed(true);
+    } else {
+        setSubscribed(false);
+    }
+
     if(data.rewardClaimedForVideo) {
         setTimeWatched(REWARD_DURATION_SECONDS);
     }
@@ -325,7 +394,7 @@ export default function WatchPage() {
         toast({
             variant: "destructive",
             title: "Daily Limit Reached",
-            description: `You can only earn ${DAILY_COIN_LIMIT} coins per day.`,
+            description: `You can only earn ${DAILY_COIN_LIMIT} coins per day from watching.`,
         });
         return;
     }
@@ -362,18 +431,44 @@ export default function WatchPage() {
     return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   }
   
-  const handleSubscribe = () => {
-    setSubscribed(!subscribed);
-    toast({
-        title: subscribed ? "Unsubscribed" : "Subscribed!",
-        description: subscribed ? `You have unsubscribed from ${videoChannel}.` : `You are now subscribed to ${videoChannel}.`,
-    });
+  const handleSubscribe = async () => {
+    if (!currentUser || subscribed || hasReachedDailySubLimit) {
+        if (!currentUser) router.push('/profile');
+        if (hasReachedDailySubLimit) {
+            toast({
+                variant: 'destructive',
+                title: 'Subscription Limit Reached',
+                description: `You can only earn ${DAILY_SUBSCRIBE_COIN_LIMIT} coins from subscriptions per day.`
+            })
+        }
+        return;
+    }
+    
+    try {
+        const {newTotalCoins, newDailySubAmount} = await claimSubscriptionReward(currentUser.name, videoChannel);
+        setCurrentUser(prev => prev ? {...prev, coins: newTotalCoins} : null);
+        setDailySubscribeCoinsEarned(newDailySubAmount);
+        setSubscribed(true);
+        toast({
+            title: "Subscribed!",
+            description: `You earned ${SUBSCRIBE_REWARD} coins.`
+        });
+        // This is a simplified version. A real app would need the actual channel URL.
+        // For now, we just open the video on YouTube.
+        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    } catch(e) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not process subscription.'
+        })
+    }
   }
 
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-       <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b md:px-6 bg-background/80 backdrop-blur-sm">
+       <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 border-b bg-background/80 backdrop-blur-sm md:px-6">
         <div className="flex items-center gap-4">
            <Link href="/" passHref>
              <Button variant="ghost" size="icon">
@@ -399,8 +494,8 @@ export default function WatchPage() {
                     <CardTitle>Rewards</CardTitle>
                     <Timer className="w-6 h-6 text-primary"/>
                 </CardHeader>
-                <CardContent>
-                    <div className="text-center p-4 md:p-8 space-y-4">
+                <CardContent className="p-4 md:p-6">
+                    <div className="text-center space-y-4">
                         <p className="text-lg">Watch for {REWARD_DURATION_SECONDS / 60} minute{REWARD_DURATION_SECONDS / 60 > 1 ? 's' : ''} to earn</p>
                         <p className="text-4xl font-bold flex items-center justify-center gap-2">
                            {REWARD_AMOUNT} <Coins className="w-8 h-8 text-yellow-500" />
@@ -409,12 +504,13 @@ export default function WatchPage() {
                         <p className="text-sm text-muted-foreground">
                             {formatTime(timeWatched)} / {formatTime(REWARD_DURATION_SECONDS)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                            Daily Coins: {dailyCoinsEarned} / {DAILY_COIN_LIMIT}
-                        </p>
+                        <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
+                           <span>Watch Coins: {dailyCoinsEarned} / {DAILY_COIN_LIMIT}</span>
+                           <span>Sub Coins: {dailySubscribeCoinsEarned} / {DAILY_SUBSCRIBE_COIN_LIMIT}</span>
+                        </div>
                     </div>
                     <Button 
-                        className="w-full" 
+                        className="w-full mt-4" 
                         disabled={!currentUser || !isTimerComplete || rewardClaimedForVideo || hasReachedDailyLimit}
                         onClick={currentUser ? handleClaimReward : () => router.push('/profile')}
                     >
@@ -433,7 +529,7 @@ export default function WatchPage() {
              
              <Card className="lg:col-start-2">
                 <CardHeader>
-                    <CardTitle>{videoTitle}</CardTitle>
+                    <CardTitle className="text-lg md:text-xl">{videoTitle}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -446,17 +542,35 @@ export default function WatchPage() {
                               {videoViews} &bull; {videoUploaded}
                             </p>
                         </div>
-                        <Button 
-                            onClick={handleSubscribe} 
-                            variant={subscribed ? 'secondary' : 'default'}
-                            className={cn("w-full md:w-auto", subscribed && "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300")}
-                        >
-                           <Bell className="mr-2 h-4 w-4" />
-                           {subscribed ? 'Subscribed' : 'Subscribe'}
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button 
+                                    disabled={!currentUser || subscribed || hasReachedDailySubLimit}
+                                    variant={subscribed ? 'secondary' : 'default'}
+                                    className={cn("w-full md:w-auto", subscribed && "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300")}
+                                >
+                                   <Bell className="mr-2 h-4 w-4" />
+                                   {subscribed ? 'Subscribed' : 'Subscribe & Earn'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Subscribe to {videoChannel}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will open the YouTube video in a new tab. You will earn {SUBSCRIBE_REWARD} coins for subscribing. Do you want to continue?
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleSubscribe}>
+                                    Continue
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                     <p className="mt-4 text-muted-foreground text-sm">
-                        Rewards are only provided for watching here.
+                        Rewards are only provided for actions taken within this app.
                     </p>
                 </CardContent>
             </Card>
