@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Flame, Video, User, Upload, UserPlus, Coins } from 'lucide-react';
+import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -78,27 +78,37 @@ export default function Home() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube w-8 h-8 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17Z"/><path d="m10 15 5-3-5-3z"/></svg>
           <h1 className="text-2xl font-bold font-headline text-red-500">my KB YT bot</h1>
         </div>
-        <Link href="/profile" passHref>
-          <Button variant="ghost" className="flex items-center gap-2">
-            {currentUser ? (
-              <>
-                <User className="w-6 h-6" />
-                <div className="flex flex-col items-start">
-                    <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
-                    <div className="flex items-center gap-1">
-                      <Coins className="w-3 h-3 text-yellow-400" />
-                      <span className="text-xs">{coins}</span>
-                    </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <User className="w-6 h-6" />
-                <span className="text-sm">Profile</span>
-              </>
+        <div className="flex items-center gap-2">
+            {currentUser?.name === 'zala kb' && (
+                 <Link href="/admin" passHref>
+                    <Button variant="outline" className="flex items-center gap-2 text-red-500 border-red-500 hover:bg-red-50 hover:text-red-600">
+                        <Shield className="w-5 h-5" />
+                        <span className="text-sm font-bold">Admin</span>
+                    </Button>
+                </Link>
             )}
-          </Button>
-        </Link>
+            <Link href="/profile" passHref>
+            <Button variant="ghost" className="flex items-center gap-2">
+                {currentUser ? (
+                <>
+                    <User className="w-6 h-6" />
+                    <div className="flex flex-col items-start">
+                        <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
+                        <div className="flex items-center gap-1">
+                        <Coins className="w-3 h-3 text-yellow-400" />
+                        <span className="text-xs">{coins}</span>
+                        </div>
+                    </div>
+                </>
+                ) : (
+                <>
+                    <User className="w-6 h-6" />
+                    <span className="text-sm">Profile</span>
+                </>
+                )}
+            </Button>
+            </Link>
+        </div>
       </header>
       
       <main className="flex-grow p-6 pb-24">
