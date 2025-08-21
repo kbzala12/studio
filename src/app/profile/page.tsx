@@ -21,7 +21,6 @@ type User = {
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   
@@ -42,7 +41,7 @@ export default function ProfilePage() {
       }
     }
     checkSession();
-  }, [router]);
+  }, []);
 
 
   const handleLogout = async () => {
@@ -92,8 +91,8 @@ export default function ProfilePage() {
                     <Button variant="secondary" className="w-full">Admin Panel</Button>
                 </Link>
               )}
-              <Button variant="destructive" onClick={handleLogout} disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : <LogOut className="mr-2" />}
+              <Button variant="destructive" onClick={handleLogout} disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin" /> : <LogOut className="mr-2" />}
                 Logout
               </Button>
             </div>
@@ -109,7 +108,7 @@ export default function ProfilePage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            Use your Telegram account to login.
+            Login or create an account using your Telegram account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -120,6 +119,9 @@ export default function ProfilePage() {
                 </Button>
             </a>
           </div>
+           <p className="text-xs text-center text-muted-foreground pt-4">
+              Click the button above to go to our Telegram bot. From there, click "Web open" to automatically log in.
+            </p>
         </CardContent>
       </Card>
     </div>
