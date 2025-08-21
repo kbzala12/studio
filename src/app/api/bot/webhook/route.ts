@@ -1,6 +1,8 @@
 
 import { Telegraf, Markup } from 'telegraf';
 import { NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
+import { randomBytes } from 'crypto';
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 if (!botToken) {
@@ -15,22 +17,71 @@ bot.telegram.getMe().then(botInfo => {
     botUsername = botInfo.username;
 });
 
-bot.start((ctx) => {
+const getWebAppKeyboard = () => {
     const webAppUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!webAppUrl) {
+     if (!webAppUrl) {
         console.error("NEXT_PUBLIC_APP_URL is not configured.");
-        return ctx.reply("Welcome! The web application is not configured yet.");
+        return Markup.inlineKeyboard([]);
     }
-
     const inviteLink = `https://t.me/${botUsername}?start=invite`;
-
-    const keyboard = Markup.inlineKeyboard([
+    return Markup.inlineKeyboard([
         [Markup.button.webApp("Web open", webAppUrl)],
         [Markup.button.url("Invite", inviteLink)]
     ]);
+};
 
-    return ctx.reply('Welcome to my KB YT bot!', keyboard);
+
+bot.start(async (ctx) => {
+    // Only respond in private chats
+    if (ctx.chat.type !== 'private') {
+        return;
+    }
+
+    const from = ctx.from;
+    const telegramId = from.id.toString();
+    const name = from.username || `${from.first_name}${from.last_name ? ' ' + from.last_name : ''}`;
+
+    try {
+        const db = await getDb();
+        let user = await db.get('SELECT * FROM users WHERE telegramId = ?', telegramId);
+        
+        const keyboard = getWebAppKeyboard();
+
+        if (user) {
+            // User exists
+            return ctx.reply(`Welcome back, ${user.name}! You can use the web app or invite others.`, keyboard);
+        } else {
+            // User does not exist, create a new one
+            const userId = randomBytes(16).toString('hex');
+            const password = randomBytes(4).toString('hex'); // Create a simple random password
+
+            // Check if username already exists
+            const existingUserByName = await db.get('SELECT * FROM users WHERE name = ?', name);
+            if(existingUserByName) {
+                 return ctx.reply(`Welcome! A user with the name "${name}" already exists. Please login on the web app with your existing account.`, keyboard);
+            }
+            
+            await db.run(
+                'INSERT INTO users (id, name, password, coins, isAdmin, telegramId) VALUES (?, ?, ?, ?, ?, ?)',
+                userId,
+                name,
+                password,
+                0, // Initial coins
+                false, // isAdmin
+                telegramId
+            );
+
+            await ctx.reply(`Welcome to my KB YT bot! We've created an account for you.`, { parse_mode: 'HTML' });
+            await ctx.reply(`Your password is: <code>${password}</code>\n\nPlease keep it safe. You can use this to log in on the web.`, { parse_mode: 'HTML' });
+            return ctx.reply('You can now open the web app or invite others.', keyboard);
+        }
+
+    } catch (error) {
+        console.error('Error during /start command:', error);
+        return ctx.reply('Sorry, something went wrong. Please try again later.');
+    }
 });
+
 
 // This is the webhook handler.
 const handleUpdate = async (req: Request) => {

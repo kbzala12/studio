@@ -24,7 +24,8 @@ async function initializeDatabase(): Promise<Database> {
         name TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         coins INTEGER DEFAULT 0 NOT NULL,
-        isAdmin BOOLEAN DEFAULT FALSE NOT NULL
+        isAdmin BOOLEAN DEFAULT FALSE NOT NULL,
+        telegramId TEXT UNIQUE
       );
     `);
      await db.exec(`
@@ -65,6 +66,18 @@ async function initializeDatabase(): Promise<Database> {
           FOREIGN KEY (userId) REFERENCES users(id)
       );
     `);
+
+    // Add telegramId column if it doesn't exist (for backward compatibility)
+    try {
+        await db.exec('ALTER TABLE users ADD COLUMN telegramId TEXT UNIQUE');
+    } catch (e: any) {
+        if (e.message.includes('duplicate column name')) {
+            // Column already exists, ignore error
+        } else {
+            throw e;
+        }
+    }
+
 
     return db;
 }
