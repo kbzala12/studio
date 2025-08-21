@@ -1,7 +1,7 @@
 
 'use client';
 
-import {Coins, Timer, CheckCircle, Youtube, Gift, PartyPopper, ArrowLeft} from 'lucide-react';
+import {Coins, Timer, CheckCircle, Youtube, Gift, PartyPopper, ArrowLeft, Bell} from 'lucide-react';
 import {useParams, useSearchParams} from 'next/navigation';
 import {useEffect, useState, useMemo, useRef} from 'react';
 import {Button} from '@/components/ui/button';
@@ -137,6 +137,7 @@ export default function WatchPage() {
   const [nextGiftTimestamp, setNextGiftTimestamp] = useState<number | null>(null);
   const [countdown, setCountdown] = useState('');
   const [isTimerPaused, setIsTimerPaused] = useState(true);
+  const [subscribed, setSubscribed] = useState(false);
   const {toast, dismiss} = useToast();
   const toastId = useRef<string | null>(null);
   const playerRef = useRef<any>(null);
@@ -360,6 +361,15 @@ export default function WatchPage() {
     const remainingSeconds = seconds % 60;
     return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
   }
+  
+  const handleSubscribe = () => {
+    setSubscribed(!subscribed);
+    toast({
+        title: subscribed ? "Unsubscribed" : "Subscribed!",
+        description: subscribed ? `You have unsubscribed from ${videoChannel}.` : `You are now subscribed to ${videoChannel}.`,
+    });
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -416,7 +426,7 @@ export default function WatchPage() {
              <div className={cn("order-first lg:order-last", isShort && 'lg:row-span-2')}>
                 <Card className="overflow-hidden">
                     <div className={cn(isShort ? "relative aspect-[9/16] max-h-[80vh] mx-auto max-w-sm" : "relative aspect-video", "bg-black")}>
-                        <div id="youtube-player"></div>
+                        <div id="youtube-player" className="w-full h-full"></div>
                     </div>
                 </Card>
              </div>
@@ -426,16 +436,24 @@ export default function WatchPage() {
                     <CardTitle>{videoTitle}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex items-center gap-3">
-                        <a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer">
+                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                         <a href={`https://www.youtube.com/watch?v=${videoId}`} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
                           <Youtube className="w-12 h-12 text-red-500" />
                         </a>
-                        <div>
+                        <div className="flex-grow">
                             <p className="font-semibold">{videoChannel}</p>
                             <p className="text-sm text-muted-foreground">
                               {videoViews} &bull; {videoUploaded}
                             </p>
                         </div>
+                        <Button 
+                            onClick={handleSubscribe} 
+                            variant={subscribed ? 'secondary' : 'default'}
+                            className={cn("w-full md:w-auto", subscribed && "bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300")}
+                        >
+                           <Bell className="mr-2 h-4 w-4" />
+                           {subscribed ? 'Subscribed' : 'Subscribe'}
+                        </Button>
                     </div>
                     <p className="mt-4 text-muted-foreground text-sm">
                         Rewards are only provided for watching here.
@@ -478,3 +496,5 @@ export default function WatchPage() {
     </div>
   );
 }
+
+    
