@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { cache } from 'react';
 import type { Session, User } from 'lucia';
 import { getDb } from './db';
-import { SqliteAdapter } from '@lucia-auth/adapter-sqlite';
+import { BetterSqlite3Adapter } from '@lucia-auth/adapter-sqlite';
 
 export interface DatabaseUser {
 	id: number;
@@ -15,7 +15,7 @@ export interface DatabaseUser {
 }
 
 const db = await getDb();
-const adapter = new SqliteAdapter(db, {
+const adapter = new BetterSqlite3Adapter(db, {
     user: 'users',
     session: 'sessions'
 });

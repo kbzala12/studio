@@ -9,31 +9,32 @@ import { Flame, Video, User, Upload, UserPlus, Coins, Shield } from 'lucide-reac
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import type { DatabaseUser } from '@/lib/auth';
 
-const ADMIN_USERNAME = 'Zala kb 101';
+
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/user', { cache: 'no-store' });
+        if(response.status === 204) return null;
+        if(response.ok) {
+            return await response.json();
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
 
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState<{name: string, isAdmin: boolean} | null>(null);
-  const [coins, setCoins] = useState(0);
+  const [currentUser, setCurrentUser] = useState<DatabaseUser | null>(null);
 
   useEffect(() => {
-    // We need to check for window to ensure this runs only on the client
-    if (typeof window !== 'undefined') {
-        const loggedInUser = localStorage.getItem('currentUser');
-        if (loggedInUser) {
-            try {
-                const user = JSON.parse(loggedInUser);
-                setCurrentUser(user);
-                // In a real app, coin data would be fetched from a server
-                const savedCoins = localStorage.getItem(`userCoins_${user.name}`);
-                setCoins(savedCoins ? parseInt(savedCoins, 10) : 0);
-            } catch (e) {
-                console.error("Failed to parse user from localStorage", e);
-                // If parsing fails, clear the invalid item
-                localStorage.removeItem('currentUser');
-            }
-        }
+    async function checkUserStatus() {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
     }
+    checkUserStatus();
   }, []);
 
   const videos = [
@@ -92,7 +93,7 @@ export default function Home() {
                         <span className="text-xs font-bold truncate max-w-[80px]">{currentUser.name}</span>
                         <div className="flex items-center gap-1">
                         <Coins className="w-3 h-3 text-yellow-400" />
-                        <span className="text-xs">{coins}</span>
+                        <span className="text-xs">{currentUser.coins}</span>
                         </div>
                     </div>
                 </>
@@ -234,3 +235,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
