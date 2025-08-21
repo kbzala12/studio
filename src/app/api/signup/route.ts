@@ -9,6 +9,10 @@ import { randomBytes } from 'crypto';
 const signupSchema = z.object({
   name: z.string().min(3, { message: 'Name must be at least 3 characters.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
 });
 
 const ADMIN_USERNAME = 'Zala kb 101';

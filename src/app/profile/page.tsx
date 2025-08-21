@@ -51,7 +51,14 @@ async function handleSignupRequest(values: z.infer<typeof signupSchema>) {
     });
     const result = await response.json();
     if (!response.ok) {
-        throw new Error(result.message);
+        const errorText = await response.text();
+        try {
+            const jsonError = JSON.parse(errorText);
+            throw new Error(jsonError.message);
+        } catch (e) {
+            console.error("Non-JSON response:", errorText);
+            throw new Error("An unexpected error occurred. The server returned an invalid response.");
+        }
     }
     return result;
 }
@@ -107,7 +114,11 @@ export default function ProfilePage() {
   });
 
    useEffect(() => {
-    form.reset();
+    form.reset({
+      name: '',
+      password: '',
+      ...(isLoginView ? {} : { confirmPassword: '' }),
+    });
   }, [isLoginView, form]);
 
 
