@@ -31,9 +31,10 @@ export async function POST(request: Request) {
 
     // In a real app, you MUST hash passwords. For this demo, we're using plain text for simplicity.
     const result = await db.run(
-      'INSERT INTO users (name, password) VALUES (?, ?)',
+      'INSERT INTO users (name, password, coins) VALUES (?, ?, ?)',
       name,
-      password
+      password,
+      0 // Set initial coins to 0
     );
 
     const userId = result.lastID;
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ message: 'Could not create user.' }, { status: 500 });
     }
 
-    const session = await lucia.createSession(userId, {});
+    const session = await lucia.createSession(String(userId), {});
     const sessionCookie = lucia.createSessionCookie(session.id);
 	  cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
     
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: error.errors[0].message }, { status: 400 });
     }
-    console.error(error);
-    return NextResponse.json({ message: 'An error occurred' }, { status: 500 });
+    console.error('Signup Error:', error);
+    return NextResponse.json({ message: 'An error occurred during signup' }, { status: 500 });
   }
 }
+

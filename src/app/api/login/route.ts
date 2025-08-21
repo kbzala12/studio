@@ -49,7 +49,8 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: error.errors[0].message }, { status: 400 });
     }
-    console.error(error);
-    return NextResponse.json({ message: 'An error occurred' }, { status: 500 });
+    console.error("Login Error:", error);
+    return NextResponse.json({ message: 'An error occurred during login' }, { status: 500 });
   }
 }
+

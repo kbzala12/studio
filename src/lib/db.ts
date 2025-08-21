@@ -19,7 +19,7 @@ async function initializeDatabase() {
     
     await newDb.exec(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         name TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         coins INTEGER DEFAULT 0 NOT NULL,
@@ -30,7 +30,7 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         expires_at INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
       );
     `);
@@ -47,7 +47,7 @@ async function initializeDatabase() {
      await newDb.exec(`
       CREATE TABLE IF NOT EXISTS rewards (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userId INTEGER NOT NULL,
+          userId TEXT NOT NULL,
           type TEXT NOT NULL, -- 'video', 'gift', 'subscribe'
           entityId TEXT, -- videoId for video reward, channel for subscribe
           claimedAt TEXT NOT NULL,
@@ -58,7 +58,7 @@ async function initializeDatabase() {
      await newDb.exec(`
       CREATE TABLE IF NOT EXISTS subscriptions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userId INTEGER NOT NULL,
+          userId TEXT NOT NULL,
           channelId TEXT NOT NULL,
           UNIQUE(userId, channelId),
           FOREIGN KEY (userId) REFERENCES users(id)
@@ -73,3 +73,4 @@ async function initializeDatabase() {
 export async function getDb() {
   return await initializeDatabase();
 }
+
