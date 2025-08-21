@@ -103,38 +103,64 @@ export default function ProfilePage() {
     try {
         if (isLoginView) {
             // Login logic
-            const existingUser = localStorage.getItem(`user_${values.name}`);
-            if (existingUser) {
-                const user = JSON.parse(existingUser);
-                if (user.password === values.password) {
-                    localStorage.setItem('currentUser', JSON.stringify({ name: user.name }));
-                    setCurrentUser({ name: user.name });
-                    setIsLoggedIn(true);
-                    loadUserData(user.name);
-                    toast({ title: "Login Successful!" });
+            const loginValues = values as z.infer<typeof loginSchema>;
+            const userAccountKey = `user_${loginValues.name}`;
+            
+            // Special case for admin to allow case-insensitive login
+            if (loginValues.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+                const adminAccountRaw = localStorage.getItem(`user_${ADMIN_USERNAME}`);
+                if (adminAccountRaw) {
+                    const adminAccount = JSON.parse(adminAccountRaw);
+                     if (adminAccount.password === loginValues.password) {
+                        localStorage.setItem('currentUser', JSON.stringify({ name: adminAccount.name }));
+                        setCurrentUser({ name: adminAccount.name });
+                        setIsLoggedIn(true);
+                        loadUserData(adminAccount.name);
+                        toast({ title: "Admin Login Successful!" });
+                     } else {
+                        toast({ variant: "destructive", title: "Invalid admin credentials" });
+                     }
                 } else {
-                    toast({ variant: "destructive", title: "Invalid credentials" });
+                    toast({ variant: "destructive", title: "Admin account not found" });
                 }
             } else {
-                 toast({ variant: "destructive", title: "User not found" });
+                const existingUser = localStorage.getItem(userAccountKey);
+                if (existingUser) {
+                    const user = JSON.parse(existingUser);
+                    if (user.password === values.password) {
+                        localStorage.setItem('currentUser', JSON.stringify({ name: user.name }));
+                        setCurrentUser({ name: user.name });
+                        setIsLoggedIn(true);
+                        loadUserData(user.name);
+                        toast({ title: "Login Successful!" });
+                    } else {
+                        toast({ variant: "destructive", title: "Invalid credentials" });
+                    }
+                } else {
+                    toast({ variant: "destructive", title: "User not found" });
+                }
             }
         } else {
             // Signup logic
             const signupValues = values as z.infer<typeof formSchema>;
-            const existingUser = localStorage.getItem(`user_${signupValues.name}`);
-            if (existingUser) {
+            let username = signupValues.name;
+            let password = signupValues.password;
+
+            // Force admin user details
+            if (signupValues.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
+                username = ADMIN_USERNAME;
+                password = ADMIN_PASSWORD;
+            }
+            
+            const userAccountKey = `user_${username}`;
+            const existingUser = localStorage.getItem(userAccountKey);
+
+            if (existingUser && username.toLowerCase() !== ADMIN_USERNAME.toLowerCase()) {
                 toast({ variant: "destructive", title: "User already exists", description: "Please choose a different name or log in." });
             } else {
-                let password = signupValues.password;
-                // Force admin password
-                if (signupValues.name.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-                    password = ADMIN_PASSWORD;
-                }
+                const newUser = { name: username, password: password };
                 
-                const newUser = { name: signupValues.name, password: password };
-                const username = signupValues.name;
-                
-                localStorage.setItem(`user_${username}`, JSON.stringify(newUser));
+                localStorage.setItem(userAccountKey, JSON.stringify(newUser));
                 localStorage.setItem('currentUser', JSON.stringify({ name: username }));
                 localStorage.setItem(`userCoins_${username}`, '0');
 
